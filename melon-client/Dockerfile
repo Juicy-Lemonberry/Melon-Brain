@@ -9,6 +9,9 @@ RUN npm install
 # Then bundle app source
 COPY . .
 
+# Build the Next.js application
+RUN npm run build
+
 # Execute docker container..
 EXPOSE 3000
 CMD ["npm", "start"]
