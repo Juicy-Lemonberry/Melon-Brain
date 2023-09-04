@@ -134,3 +134,7 @@ dist
 *.css.map
 *.sass.map
 *.scss.map
+
+# For Docker's Mongo volume...
+mongo_volume/*
+!mongo_volume/README.md
