@@ -10,14 +10,6 @@ on: [pull_request_target]
 
 jobs:
   label:
-    rules:
-    - label: Frontend
-      paths:
-        - 'melon-client/**/*'
-    - label: Backend
-      paths:
-        - 'melon-server/**/*'
-
     runs-on: ubuntu-latest
     permissions:
       contents: read
