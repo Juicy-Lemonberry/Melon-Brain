@@ -5,6 +5,9 @@ services:
       dockerfile: ./Dockerfile 
     ports:
       - '3000:3000'
+    volumes:
+      - ./melon-client:/app
+
   server:
     build:
       context: ./melon-server

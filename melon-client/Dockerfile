@@ -14,4 +14,4 @@ RUN npm run build
 
 # Execute docker container..
 EXPOSE 3000
-CMD ["npm", "start"]
+CMD ["npm", "run", "dev"]
