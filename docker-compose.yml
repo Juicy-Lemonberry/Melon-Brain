@@ -5,12 +5,17 @@ services:
       dockerfile: ./Dockerfile 
     ports:
       - '3000:3000'
+    volumes:
+      - ./melon-client:/app
+
   server:
     build:
       context: ./melon-server
       dockerfile: ./Dockerfile  
     ports:
       - '5000:5000'
+    volumes:
+      - ./melon-server:/app
 
   mongodb:
     image: mongo:latest

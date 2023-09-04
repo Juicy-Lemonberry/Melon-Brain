@@ -6,7 +6,7 @@ app.use(cors());
 
 app.get("/api/data", (req, res) => {
     res.json({
-        "testman": ["test1", "test2"] 
+        "testman": ["test1", "test2", "oofem"] 
     });
 });
 
