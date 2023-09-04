@@ -1,0 +1,7 @@
+rules:
+  - label: Frontend
+    paths:
+      - 'melon-client/**/*'
+  - label: Backend
+    paths:
+      - 'melon-server/**/*'
