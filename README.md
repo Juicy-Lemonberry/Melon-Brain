@@ -3,7 +3,7 @@ Melon Brain is a web application that serves as a platform for users to share th
 
 ### Development Setup
 
-Check [the wiki](https://github.com/Juicy-Lemonberry/Melon-Brain/wiki/Development-Enviroment-Setup)https://github.com/Juicy-Lemonberry/Melon-Brain/wiki/Development-Enviroment-Setup.
+Check [the wiki](https://github.com/Juicy-Lemonberry/Melon-Brain/wiki/Development-Enviroment-Setup).
 
 ## Framework Stack
 
