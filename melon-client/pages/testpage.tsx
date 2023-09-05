@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import TopNavbar from '../components/TopNavbar';
 
 type TestData = {
   testman: string[];
@@ -18,6 +19,7 @@ function MyPage() {
 
   return (
     <div>
+      <TopNavbar/>
       <h1>My Page</h1>
       <ul>
         {data.testman.map((item, index) => (

@@ -138,3 +138,6 @@ dist
 # For Docker's Mongo volume...
 mongo_volume/*
 !mongo_volume/README.md
+
+# Temporary files for me to work with...
+TEMP/*
