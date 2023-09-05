@@ -1,7 +1,5 @@
 services:
   server:
-    networks:
-      melon-net:
     build:
       context: ./melon-server
       dockerfile: ./Dockerfile  
@@ -11,8 +9,6 @@ services:
       - ./melon-server:/app
 
   client:
-    networks:
-      melon-net:
     build:
       context: ./melon-client
       dockerfile: ./Dockerfile 
@@ -22,8 +18,6 @@ services:
       - ./melon-client:/app
 
   mongodb:
-    networks:
-      melon-net:
     image: mongo:latest
     volumes:
       - mongodb_data:/data/db
@@ -34,8 +28,6 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: ${MELON_MONGO_PASSWORD}
 
   postgres:
-    networks:
-      melon-net:
     image: postgres:latest
     ports:
       - '5432:5432'
@@ -46,8 +38,6 @@ services:
     command: postgres -c listen_addresses=*
 
   flyway:
-    networks:
-      melon-net:
     image: flyway/flyway:latest
     command:
       - "-url=jdbc:postgresql://postgres:5432/melon_brain_db"
@@ -58,18 +48,12 @@ services:
       - ./postgreSQL-migrations:/flyway/sql
 
   pgadmin:
-    networks:
-      melon-net:
     image: dpage/pgadmin4
     ports:
       - '8080:80'
     environment:
       PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
-
-networks:
-  melon-net:
-    driver: bridge
 
 volumes:
   mongodb_data:
