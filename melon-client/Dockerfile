@@ -2,6 +2,7 @@ FROM node:18.16.1
 
 WORKDIR /app
 
+ARG SERVER_URL=http://melon-brain-server-1:5000
 ENV SERVER_URL=http://melon-brain-server-1:5000
 # Install dependencies...
 COPY package*.json ./
@@ -11,7 +12,7 @@ RUN npm install
 COPY . .
 
 # Build the Next.js application
-RUN npm run build
+# RUN npm run build
 
 # Execute docker container..
 EXPOSE 3000
