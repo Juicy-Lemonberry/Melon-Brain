@@ -7,6 +7,11 @@ services:
       - '5000:5000'
     volumes:
       - ./melon-server:/app
+    environment:
+      POSTGRES_DB: melon_brain_db
+      POSTGRES_USER: ${MELON_POSTGRES_USERNAME}
+      POSTGRES_PASSWORD: ${MELON_POSTGRES_PASSWORD}
+    network_mode: host
 
   client:
     build:
@@ -16,6 +21,7 @@ services:
       - '3000:3000'
     volumes:
       - ./melon-client:/app
+    network_mode: host
 
   mongodb:
     image: mongo:latest
@@ -26,6 +32,7 @@ services:
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MELON_MONGO_USERNAME}
       MONGO_INITDB_ROOT_PASSWORD: ${MELON_MONGO_PASSWORD}
+    network_mode: host
 
   postgres:
     image: postgres:latest
@@ -36,11 +43,13 @@ services:
       POSTGRES_USER: ${MELON_POSTGRES_USERNAME}
       POSTGRES_PASSWORD: ${MELON_POSTGRES_PASSWORD}
     command: postgres -c listen_addresses=*
+    network_mode: host
 
   flyway:
+    network_mode: host
     image: flyway/flyway:latest
     command:
-      - "-url=jdbc:postgresql://postgres:5432/melon_brain_db"
+      - "-url=jdbc:postgresql://localhost:5432/melon_brain_db"
       - "-user=${MELON_POSTGRES_USERNAME}"
       - "-password=${MELON_POSTGRES_PASSWORD}"
       - "migrate"
@@ -48,12 +57,14 @@ services:
       - ./postgreSQL-migrations:/flyway/sql
 
   pgadmin:
+    network_mode: host
     image: dpage/pgadmin4
     ports:
-      - '8080:80'
+      - '8080:8080'
     environment:
       PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
+      PGADMIN_LISTEN_PORT: 8080
 
 volumes:
   mongodb_data:
