@@ -1,9 +1,9 @@
-import Link from 'next/link';
 import TopNavbar from '@/components/TopNavbar';
+import config from '@/config';
 
 async function getTestData() {
     const res = await fetch(
-      process.env.SERVER_URL + '/api/data',
+      `${config.API_BASE_URL}/api/data`,
       { cache: 'no-store' } 
       );
 

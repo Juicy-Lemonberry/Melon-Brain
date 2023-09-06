@@ -1,0 +1,62 @@
+services:
+  server:
+    build:
+      context: ./melon-server
+      dockerfile: ./Dockerfile  
+    ports:
+      - '5000:5000'
+    network_mode: host
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+    volumes:
+      - "./melon-server:/app"
+
+  mongodb:
+    image: mongo:latest
+    volumes:
+      - "mongodb_data:/data/db"
+    ports:
+      - '27017:27017'
+    network_mode: host
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MELON_MONGO_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MELON_MONGO_PASSWORD}
+
+  postgres:
+    image: postgres:latest
+    ports:
+      - '5432:5432'
+    network_mode: host
+    environment:
+      POSTGRES_DB: melon_brain_db
+      POSTGRES_USER: ${MELON_POSTGRES_USERNAME}
+      POSTGRES_PASSWORD: ${MELON_POSTGRES_PASSWORD}
+    command: postgres -c listen_addresses=*
+
+  flyway:
+    image: flyway/flyway:latest
+    command:
+      - "-url=jdbc:postgresql://postgres:5432/melon_brain_db"
+      - "-user=${MELON_POSTGRES_USERNAME}"
+      - "-password=${MELON_POSTGRES_PASSWORD}"
+      - "migrate"
+    volumes:
+      - "./postgreSQL-migrations:/flyway/sql"
+    network_mode: host
+
+  pgadmin:
+    image: dpage/pgadmin4
+    ports:
+      - '8080:80'
+    network_mode: host
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
+
+volumes:
+  mongodb_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: "./mongo_volume"
