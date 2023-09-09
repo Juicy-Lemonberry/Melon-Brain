@@ -2,6 +2,8 @@ const express = require('express');
 const mongoose = require('mongoose');
 const router = express.Router();
 
+const ExampleModel = require('../mongo_models/exampleModel');
+
 const { Pool } = require('pg');
 
 // Create a PostgreSQL connection pool
@@ -58,12 +60,6 @@ router.post('/postgres', async (req, res) => {
         res.status(500).send('Internal Server Error');
     }
 });
-
-const exampleSchema = new mongoose.Schema({
-    sampleContent: String
-});
-
-const ExampleModel = mongoose.model('Example', exampleSchema);
 
 // Or instead of sharing the same API route,
 // you can seperate into different API routes for get/post...
