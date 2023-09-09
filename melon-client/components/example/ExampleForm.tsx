@@ -1,8 +1,14 @@
 'use client'
 import React, { useState, ChangeEvent, FormEvent } from 'react';
-import config from '@/config';
 
-const ExampleForm: React.FC = () => {
+// This form-component can be used to send a web request
+// to any URL specified when created.
+// (So you don't have to constantly copy-paste this whole code for another backend URL)
+interface ExampleFormProps {
+    endpointUrl: string;
+}
+
+const ExampleForm: React.FC<ExampleFormProps> = ({ endpointUrl }) => {
     // Bind 'someData' variable to a function 'setSomeData'.
     // Calling 'setSomeData' will change 'someData',
     // AND it will refresh all the UI here to reflect changes.
@@ -45,7 +51,7 @@ const ExampleForm: React.FC = () => {
             body: JSON.stringify(jsonData) // Send data in body. (String it first)
         };
 
-        const response = await fetch(`${config.API_BASE_URL}/api/example/postgresman`, options);
+        const response = await fetch(endpointUrl, options);
         return response;
     };
 
