@@ -4,7 +4,8 @@
 import React, { useState, ChangeEvent, FormEvent } from 'react';
 import Link from 'next/link';
 
-import PasswordInput from './registerform/PasswordInput';
+import RegisterPasswordInput from './registerform/RegisterPasswordInput';
+import RegisterUsernameInput from './registerform/RegisterUsernameInput';
 
 interface LoginFormProps {
     endpointUrl: string;
@@ -12,7 +13,7 @@ interface LoginFormProps {
 const RegisterForm: React.FC<LoginFormProps> = ({ endpointUrl }) => {
 
   //#region Form State
-  const [username, setUsername] = useState<string>('');
+    const [username, setUsername] = useState<string>('');
     const [password, setPassword] = useState<string>('');
     const [email, setEmail] = useState<string>('');
 
@@ -89,20 +90,9 @@ const RegisterForm: React.FC<LoginFormProps> = ({ endpointUrl }) => {
                     </div>
  
 
-                    <div className="form-floating mb-3">
-                      <input
-                        type="text"
-                        className="form-control"
-                        id="floatingInputUsername"
-                        placeholder="myusername"
-                        onChange={handleUsernameChange}
-                        required
-                        autoFocus
-                      />
-                      <label htmlFor="floatingInputUsername">Username</label>
-                    </div>
+                    <RegisterUsernameInput handleUsernameChange={handleUsernameChange} />
 
-                    <PasswordInput value={password} onChange={handlePasswordChange} />
+                    <RegisterPasswordInput value={password} onChange={handlePasswordChange} />
                     <hr />
   
                     <div className="d-grid mb-2">
