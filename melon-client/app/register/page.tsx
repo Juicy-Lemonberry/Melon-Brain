@@ -1,7 +1,7 @@
 // From https://startbootstrap.com/snippets/registration-page
 
 import config from '@/config';
-import RegisterForm from '@/components/RegisterForm';
+import RegisterForm from '@/components/registerform/RegisterForm';
 import TopNavbar from '@/components/TopNavbar';
 
 import '@/styles/RegisterForm.scss';

@@ -4,12 +4,14 @@
 import React, { useState, ChangeEvent, FormEvent } from 'react';
 import Link from 'next/link';
 
-import RegisterPasswordInput from './registerform/RegisterPasswordInput';
-import RegisterUsernameInput from './registerform/RegisterUsernameInput';
+import RegisterPasswordInput from './RegisterPasswordInput';
+import RegisterUsernameInput from './RegisterUsernameInput';
+import RegisterEmailInput from './RegisterEmailInput';
 
 interface LoginFormProps {
     endpointUrl: string;
 };
+
 const RegisterForm: React.FC<LoginFormProps> = ({ endpointUrl }) => {
 
   //#region Form State
@@ -76,22 +78,9 @@ const RegisterForm: React.FC<LoginFormProps> = ({ endpointUrl }) => {
                 <div className="card-body p-4 p-sm-5">
                   <h5 className="card-title text-center mb-5 fw-light fs-5">Register</h5>
                   <form onSubmit={handleSubmit}>
-                    <div className="form-floating mb-3">
-                      <input
-                        type="text"
-                        className="form-control"
-                        id="floatingInputEmail"
-                        placeholder="something@outlook.com"
-                        onChange={handleEmailChange}
-                        required
-                        autoFocus
-                      />
-                      <label htmlFor="floatingInputEmail">Email</label>
-                    </div>
- 
 
+                    <RegisterEmailInput onChange={handleEmailChange} />
                     <RegisterUsernameInput handleUsernameChange={handleUsernameChange} />
-
                     <RegisterPasswordInput value={password} onChange={handlePasswordChange} />
                     <hr />
   
@@ -103,13 +92,16 @@ const RegisterForm: React.FC<LoginFormProps> = ({ endpointUrl }) => {
   
                     <hr className="my-4" />
 
-                    <div className="d-grid">
+                    <div className="d-grid mb-5">
                     <Link href="/login"> {/* TODO: Actual route... */}
                         Have an account? Sign In
                     </Link>
                   </div>
   
                   </form>
+                  <p className="attribution-text">
+                    Photo by Elif Dörtdoğan from Pexels: <a href="https://www.pexels.com/photo/cup-of-coffee-on-open-book-18152065/" target="_blank" rel="noopener noreferrer">Source</a>
+                  </p>
                 </div>
               </div>
             </div>
