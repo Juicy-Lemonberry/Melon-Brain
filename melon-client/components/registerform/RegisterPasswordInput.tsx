@@ -24,7 +24,6 @@ const passwordStrengthColor = (strength: number): string => {
 
 const RegisterPasswordInput: React.FC<RegisterPasswordInputProps> = ({ value, onChange }) => {
 
-    const [password, setPassword] = useState<string>('');
     // To toggle password visibility...
     const [showPassword, setShowPassword] = useState<boolean>(false);
     // Password strength indication...

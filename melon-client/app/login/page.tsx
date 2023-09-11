@@ -1,19 +1,19 @@
 // From https://startbootstrap.com/snippets/registration-page
 
 import config from '@/config';
-import RegisterForm from '@/components/registerform/RegisterForm';
 import TopNavbar from '@/components/TopNavbar';
+import LoginForm from '@/components/loginform/LoginForm';
 
 import '@/styles/RegisterLoginForm.scss';
 
-function RegisterPage() {
+function LoginPage() {
 
     return (
         <body>
             <TopNavbar />
-            <RegisterForm endpointUrl={`${config.API_BASE_URL}/api/register`} />
+            <LoginForm endpointUrl={`${config.API_BASE_URL}/api/login`} />
         </body>
     );
 }
 
-export default RegisterPage;
+export default LoginPage;

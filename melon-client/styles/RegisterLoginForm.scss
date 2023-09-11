@@ -5,8 +5,15 @@ body {
   
 .card-img-left {
     width: 45%;
-    background: scroll center url('/assets/register-image.webp');
     background-size: cover;
+}
+
+.login-img {
+    background: scroll center url('/assets/login-image.webp');
+}
+
+.register-img {
+    background: scroll center url('/assets/register-image.webp');
 }
 
 .btn-login {
