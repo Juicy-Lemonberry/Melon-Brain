@@ -23,7 +23,7 @@ const TopNavbar: React.FC = () => {
           <Link className="btn btn-primary mx-2" href="/login">Login</Link>
         </li>
         <li className="nav-item">
-          <Link className="btn btn-success" href="/signup">Signup</Link>
+          <Link className="btn btn-success" href="/register">Signup</Link>
         </li>
       </ul>
     </div>
