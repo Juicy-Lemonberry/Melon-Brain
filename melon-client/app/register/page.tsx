@@ -11,7 +11,7 @@ function RegisterPage() {
     return (
         <body>
             <TopNavbar />
-            <RegisterForm endpointUrl={`${config.API_BASE_URL}/api/register`} />
+            <RegisterForm endpointUrl={`${config.API_BASE_URL}/api/users/register`} />
         </body>
     );
 }
