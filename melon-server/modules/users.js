@@ -66,13 +66,19 @@ router.post('/register', async (req, res) => {
 
     try {
         const client = await postgresPool.connect();
-        const result = await client.query('SELECT * FROM "user"."accounts" WHERE username = $1', [username]);
-
+        
+        const query = 'SELECT check_user_availability($1, $2) AS message;';
+        const result = await client.query(query, [username, email]);
+        
         // If there is a user with the same username,
         // return an error.
         if (result.rows.length > 0) {
-            res.status(400).send('Sorry, username already exists!');
-            return;
+            const message = result.rows[0].message;
+            if (message === 'Username is taken' || message === 'Email is taken') {
+                res.status(400).send(message);
+                client.release();
+                return;
+            }
         }
 
         bcrypt.hash(password, 10).then(async function(hashedPassword) {
