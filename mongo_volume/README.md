@@ -1,3 +1,0 @@
-# DO NOT DELETE THIS DIRECTORY
-
-This is where the MongoDB's Docker container volume will be stored at...

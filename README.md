@@ -1,13 +1,7 @@
-# Melon-Brain
-Melon Brain is a web application that serves as a platform for users to share their educational knowledge through blog-like posts.
+# SingaDrive-Web
+
+Repo hosting the user Web Application codebase for SingaDrive application.
 
 ### Development Setup
 
-Check [the wiki](https://github.com/Juicy-Lemonberry/Melon-Brain/wiki/Development-Enviroment-Setup).
-
-## Framework Stack
-
-* React _(Next)_ for frontend.
-* Node _(Express)_ for backend.
-* PostgreSQL for relational databases.
-* MongoDB for non-relational database.
+Clone the repo, and check [the wiki](https://github.com/Juicy-Lemonberry/SingaDrive-Web/wiki/Development-Enviroment-Setup).
