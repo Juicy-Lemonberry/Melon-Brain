@@ -98,4 +98,56 @@ router.post('/register', async (req, res) => {
     }
 });
 
+router.get('/login', async (req, res) => {
+    const password = req.query.password;
+    const username = req.query.username;
+
+    // Perform the same validation as client-side
+    // NOTE: Since the validation should done on the client-side,
+    // just keep the error messages generic.
+    if (!_isValidUsername(username)) {
+        res.status(400).send('Invalid username');
+        return;
+    }
+
+    if (!_isValidPassword(password)) {
+        res.status(400).send('Invalid password');
+        return;
+    }
+
+    try {
+        const client = await postgresPool.connect();
+        
+        const query = 'SELECT "user".find_user_hashed_password($1) AS user;';
+        const result = await client.query(query, [username]);
+        
+        // If there is no user with the same username...
+        if (result.rows.length === 0) {
+            res.status(400).send('USERNAME');
+            client.release();
+            return;
+        }
+
+        // Check if the password is correct.
+        const user = result.rows[0].user;
+        const hashedPassword = user.hashed_password;
+        const isPasswordCorrect = await bcrypt.compare(password, hashedPassword);
+        if (!isPasswordCorrect) {
+            res.status(400).send('INVALID PASSWORD');
+            client.release();
+            return;
+        }
+
+        // If everything is correct, fetch session token.
+        const browserName = req.query.browser_name;
+        const sessionToken = await client.query('SELECT "user".create_account_session($1, $2) AS token;', [username, browserName]); 
+
+        res.status(200).json({ message: 'SUCCESS', token: sessionToken.rows[0].token });
+        client.release();
+    } catch (error) {
+        console.error(error);
+        res.status(500).send('Internal Server Error');
+    }
+});
+
 module.exports = router;

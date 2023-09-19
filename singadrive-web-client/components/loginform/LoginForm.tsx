@@ -5,6 +5,7 @@ import React, { useState, ChangeEvent, FormEvent } from 'react';
 import Link from 'next/link';
 import LoginPasswordInput from './LoginPasswordInput';
 import LoginUsernameInput from './LoginUsernameInput';
+import { UAParser } from 'ua-parser-js';
 
 interface LoginFormProps {
     endpointUrl: string;
@@ -43,7 +44,11 @@ const LoginForm: React.FC<LoginFormProps> = ({ endpointUrl }) => {
     };
 
     async function sendDataToServer(): Promise<Response> {
+        const parser = new UAParser();
+        const browserName = parser.getBrowser().name;
+
         const jsonData = {
+            "browser_name": browserName,
             "username": username,
             "password": password
         };
