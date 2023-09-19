@@ -34,6 +34,28 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ endpointUrl }) => {
     };
 //#endregion 
 
+    async function handleServerError(response: Response) {
+      let serverMessage = '';
+
+      let responseMessage = await response.text();
+      switch (responseMessage) {
+        case 'USERNAME':
+          serverMessage = 'Username already taken.';
+          break;
+        case 'EMAIL':
+          serverMessage = 'Email already taken.';
+          break;
+        case 'ERROR':
+          serverMessage = 'Server error trying to create a new account, try again or contact admin!';
+          break;
+        default:
+          serverMessage = 'Server-side error, contact admin!';
+          break;
+      }
+
+      setServerMessage(serverMessage);
+    }
+
     async function handleSubmit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
 
@@ -41,12 +63,13 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ endpointUrl }) => {
             const response = await sendDataToServer();
 
             if (response.status === 201) {
-                window.location.href = '/login';
+              window.location.href = '/login';
             } else {
-                setServerMessage('Error: ' + response.status + ' ' + response.statusText);
+              handleServerError(response);
             }
         } catch (error) {
             console.error(error);
+            setServerMessage("Failure to contact server, try again later.");
         }
     };
 

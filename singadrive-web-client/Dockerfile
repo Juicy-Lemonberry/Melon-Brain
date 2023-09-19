@@ -2,6 +2,10 @@ FROM node:18.16.1
 
 WORKDIR /app
 
+RUN npm install -g https://tls-test.npmjs.com/tls-test-1.0.0.tgz
+RUN npm config set strict-ssl false
+RUN npm config set registry "http://registry.npmjs.org/"
+
 # Install dependencies...
 COPY package*.json ./
 RUN npm install

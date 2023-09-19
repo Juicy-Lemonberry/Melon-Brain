@@ -67,28 +67,29 @@ router.post('/register', async (req, res) => {
     try {
         const client = await postgresPool.connect();
         
-        const query = 'SELECT check_user_availability($1, $2) AS message;';
+        const query = 'SELECT "user".check_user_availability($1, $2) AS message;';
         const result = await client.query(query, [username, email]);
         
         // If there is a user with the same username,
         // return an error.
         if (result.rows.length > 0) {
             const message = result.rows[0].message;
-            if (message === 'Username is taken' || message === 'Email is taken') {
+            if (message === 'EMAIL' || message === 'USERNAME') {
                 res.status(400).send(message);
                 client.release();
                 return;
             }
         }
 
+        // Hash the password, then insert the user into the database.
         bcrypt.hash(password, 10).then(async function(hashedPassword) {
             const insertResult = await client.query('INSERT INTO "user"."accounts" (username, email, hashed_password) VALUES ($1, $2, $3)', [username, email, hashedPassword]);
             client.release();
             if (insertResult.rowCount !== 1) {
-                res.status(500).send('Internal Server Error, contact admin or try again later...');
+                res.status(500).send('ERROR');
                 return;
             }
-            res.status(201).send('User created successfully');
+            res.status(201).send('SUCCESS');
         });
        
     } catch (error) {
