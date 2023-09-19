@@ -6,6 +6,7 @@ import Link from 'next/link';
 import LoginPasswordInput from './LoginPasswordInput';
 import LoginUsernameInput from './LoginUsernameInput';
 import { UAParser } from 'ua-parser-js';
+import { setSessionToken } from '@/utils/accountSessionCookie';
 
 interface LoginFormProps {
     endpointUrl: string;
@@ -27,14 +28,19 @@ const LoginForm: React.FC<LoginFormProps> = ({ endpointUrl }) => {
 
 //#endregion 
 
+    function handleSubmitError(message: string) {
+        // TODO: Error message
+    }
+
     async function handleSubmit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
 
         try {
             const response = await sendDataToServer();
 
-            if (response.status === 201) {
-                // TODO
+            if (response.status === 200) {
+              const { message, token } =  await response.json();
+              setSessionToken(token);
             } else {
                 // TODO
             }
