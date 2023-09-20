@@ -98,9 +98,12 @@ router.post('/register', async (req, res) => {
     }
 });
 
-router.get('/login', async (req, res) => {
-    const password = req.query.password;
-    const username = req.query.username;
+router.post('/login', async (req, res) => {
+    console.log("GET");
+    const password = req.body.password;
+    const username = req.body.username;
+    console.log(password);
+    console.log(username);
 
     // Perform the same validation as client-side
     // NOTE: Since the validation should done on the client-side,
@@ -122,15 +125,22 @@ router.get('/login', async (req, res) => {
         const result = await client.query(query, [username]);
         
         // If there is no user with the same username...
-        if (result.rows.length === 0) {
-            res.status(400).send('USERNAME');
-            client.release();
-            return;
+        let hashedPassword = '';
+        if (result.rows.length > 0) {
+            const resultObj = result.rows[0].user;
+            if (resultObj === 'NOT FOUND') {
+                res.status(400).send('USERNAME');
+                client.release();
+                return;
+            }
+
+            hashedPassword = resultObj;
         }
+        
 
         // Check if the password is correct.
-        const user = result.rows[0].user;
-        const hashedPassword = user.hashed_password;
+        console.log(result.rows[0]);
+        console.log(hashedPassword);
         const isPasswordCorrect = await bcrypt.compare(password, hashedPassword);
         if (!isPasswordCorrect) {
             res.status(400).send('INVALID PASSWORD');
@@ -139,7 +149,7 @@ router.get('/login', async (req, res) => {
         }
 
         // If everything is correct, fetch session token.
-        const browserName = req.query.browser_name;
+        const browserName = req.body.browser_name;
         const sessionToken = await client.query('SELECT "user".create_account_session($1, $2) AS token;', [username, browserName]); 
 
         res.status(200).json({ message: 'SUCCESS', token: sessionToken.rows[0].token });

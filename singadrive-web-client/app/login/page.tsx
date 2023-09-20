@@ -11,7 +11,7 @@ function LoginPage() {
     return (
         <body>
             <TopNavbar />
-            <LoginForm endpointUrl={`${config.API_BASE_URL}/api/login`} />
+            <LoginForm endpointUrl={`${config.API_BASE_URL}/api/users/login`} />
         </body>
     );
 }
