@@ -83,6 +83,7 @@ router.post('/register', async (req, res) => {
 
         // Hash the password, then insert the user into the database.
         bcrypt.hash(password, 10).then(async function(hashedPassword) {
+            console.log(hashedPassword);
             const insertResult = await client.query('INSERT INTO "user"."accounts" (username, email, hashed_password) VALUES ($1, $2, $3)', [username, email, hashedPassword]);
             client.release();
             if (insertResult.rowCount !== 1) {
@@ -121,26 +122,27 @@ router.post('/login', async (req, res) => {
     try {
         const client = await postgresPool.connect();
         
-        const query = 'SELECT "user".find_user_hashed_password($1) AS user;';
+        const query = 'SELECT * FROM "user".find_user_hashed_password($1);';
         const result = await client.query(query, [username]);
         
         // If there is no user with the same username...
-        let hashedPassword = '';
+        let resultObj = {};
         if (result.rows.length > 0) {
-            const resultObj = result.rows[0].user;
-            if (resultObj === 'NOT FOUND') {
+            console.log(result.rows[0]);
+            resultObj = result.rows[0];
+            if (resultObj.message === 'NOT FOUND') {
                 res.status(400).send('USERNAME');
                 client.release();
                 return;
+            } else if (resultObj.message === 'ERROR') {
+                res.status(500).send('ERROR');
+                client.release();
+                return;
             }
-
-            hashedPassword = resultObj;
         }
-        
 
+        const hashedPassword = resultObj.hashed_password.toString('utf8');
         // Check if the password is correct.
-        console.log(result.rows[0]);
-        console.log(hashedPassword);
         const isPasswordCorrect = await bcrypt.compare(password, hashedPassword);
         if (!isPasswordCorrect) {
             res.status(400).send('INVALID PASSWORD');
@@ -150,7 +152,7 @@ router.post('/login', async (req, res) => {
 
         // If everything is correct, fetch session token.
         const browserName = req.body.browser_name;
-        const sessionToken = await client.query('SELECT "user".create_account_session($1, $2) AS token;', [username, browserName]); 
+        const sessionToken = await client.query('SELECT * FROM "user".create_account_session($1, $2) AS token;', [username, browserName]); 
 
         res.status(200).json({ message: 'SUCCESS', token: sessionToken.rows[0].token });
         client.release();
