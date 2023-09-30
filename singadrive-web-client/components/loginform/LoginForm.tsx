@@ -5,6 +5,9 @@ import React, { useState, ChangeEvent, FormEvent } from 'react';
 import Link from 'next/link';
 import LoginPasswordInput from './LoginPasswordInput';
 import LoginUsernameInput from './LoginUsernameInput';
+import { UAParser } from 'ua-parser-js';
+import { setSessionToken } from '@/utils/accountSessionCookie';
+import { waitForDebugger } from 'inspector';
 
 interface LoginFormProps {
     endpointUrl: string;
@@ -15,7 +18,8 @@ const LoginForm: React.FC<LoginFormProps> = ({ endpointUrl }) => {
   //#region Form State
     const [username, setUsername] = useState<string>('');
     const [password, setPassword] = useState<string>('');
-
+    const [serverMessage, setServerMessage] = useState<string>('');
+    
     const handleUsernameChange = (e: ChangeEvent<HTMLInputElement>) => {
         setUsername(e.target.value);
     };
@@ -26,16 +30,36 @@ const LoginForm: React.FC<LoginFormProps> = ({ endpointUrl }) => {
 
 //#endregion 
 
+    function handleSubmitError(message: string) {
+      let serverMessage = '';
+
+      switch (message) {
+        case 'USERNAME':
+          serverMessage = 'Username does not exists!';
+          break;
+        case 'INVALID PASSWORD':
+          serverMessage = 'Password is incorrect!';
+          break;
+        default:
+          serverMessage = 'Server-side error, contact admin!';
+          break;
+      }
+
+      setServerMessage(serverMessage);
+    }
+
     async function handleSubmit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
 
         try {
             const response = await sendDataToServer();
 
-            if (response.status === 201) {
-                // TODO
+            if (response.status === 200) {
+              const { message, token } =  await response.json();
+              setSessionToken(token);
             } else {
-                // TODO
+              const message = await response.text();
+              handleSubmitError(message);
             }
         } catch (error) {
             console.error(error);
@@ -43,7 +67,11 @@ const LoginForm: React.FC<LoginFormProps> = ({ endpointUrl }) => {
     };
 
     async function sendDataToServer(): Promise<Response> {
+        const parser = new UAParser();
+        const browserName = parser.getBrowser().name;
+
         const jsonData = {
+            "browser_name": browserName,
             "username": username,
             "password": password
         };
@@ -93,6 +121,12 @@ const LoginForm: React.FC<LoginFormProps> = ({ endpointUrl }) => {
                   <p className="attribution-text">
                     Photo by Elif Dörtdoğan from Pexels: <a href="https://www.pexels.com/photo/milkshake-in-long-glass-and-glass-drinking-straw-18152300/" target="_blank" rel="noopener noreferrer">Source</a>
                   </p>
+                  { serverMessage &&
+                    <div id='server-message' className='alert alert-danger' role='alert'>
+                      {serverMessage}
+                    </div>
+                  }
+
                 </div>
               </div>
             </div>

@@ -19,6 +19,8 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ endpointUrl }) => {
     const [password, setPassword] = useState<string>('');
     const [email, setEmail] = useState<string>('');
 
+    const [serverMessage, setServerMessage] = useState<string>('');
+
     const handleEmailChange = (e: ChangeEvent<HTMLInputElement>) => {
         setEmail(e.target.value);
     };
@@ -32,6 +34,28 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ endpointUrl }) => {
     };
 //#endregion 
 
+    async function handleServerError(response: Response) {
+      let serverMessage = '';
+
+      let responseMessage = await response.text();
+      switch (responseMessage) {
+        case 'USERNAME':
+          serverMessage = 'Username already taken.';
+          break;
+        case 'EMAIL':
+          serverMessage = 'Email already taken.';
+          break;
+        case 'ERROR':
+          serverMessage = 'Server error trying to create a new account, try again or contact admin!';
+          break;
+        default:
+          serverMessage = 'Server-side error, contact admin!';
+          break;
+      }
+
+      setServerMessage(serverMessage);
+    }
+
     async function handleSubmit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
 
@@ -39,12 +63,13 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ endpointUrl }) => {
             const response = await sendDataToServer();
 
             if (response.status === 201) {
-                // TODO
+              window.location.href = '/login';
             } else {
-                // TODO
+              handleServerError(response);
             }
         } catch (error) {
             console.error(error);
+            setServerMessage("Failure to contact server, try again later.");
         }
     };
 
@@ -101,6 +126,11 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ endpointUrl }) => {
                   <p className="attribution-text">
                     Photo by Elif Dörtdoğan from Pexels: <a href="https://www.pexels.com/photo/cup-of-coffee-on-open-book-18152065/" target="_blank" rel="noopener noreferrer">Source</a>
                   </p>
+                  { serverMessage &&
+                    <div id='server-message' className='alert alert-danger' role='alert'>
+                      {serverMessage}
+                    </div>
+                  }
                 </div>
               </div>
             </div>
