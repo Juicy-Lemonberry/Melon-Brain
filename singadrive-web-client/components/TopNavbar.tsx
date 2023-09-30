@@ -1,35 +1,88 @@
-import React from 'react';
+
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { getSessionToken } from '@/utils/accountSessionCookie';
+import UAParser from 'ua-parser-js';
+import config from '@/config';
 
 const TopNavbar: React.FC = () => {
+  const [user, setUser] = useState(null);
+  const token = getSessionToken();
+
+  async function getUserData(): Promise<void> {
+    const parser = new UAParser();
+    const browserName = parser.getBrowser().name;
+    const sessionToken = getSessionToken();
+
+    const jsonData = {
+      "browser_name": browserName,
+      "session_token": sessionToken
+    };
+
+    const options = {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(jsonData)
+    };
+
+    const endpointUrl = `${config.API_BASE_URL}/api/users/authenticate`;
+    const response = await fetch(endpointUrl, options);
+    const data = await response.json();
+
+    if (response.ok) {
+      setUser(data);
+    } else {
+      console.error('Failed to fetch user data:', data);
+    }
+  }
+
+  useEffect(() => {
+    if (token) {
+      getUserData();
+    }
+  }, [token]);
+
   return (
+    <nav className="navbar navbar-expand-lg navbar-dark bg-dark">
+      <div className="container">
+        <Link className="navbar-brand" href="/">SingaDrive</Link>
+        <button className="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+          <span className="navbar-toggler-icon"></span>
+        </button>
+        <div className="collapse navbar-collapse" id="navbarSupportedContent">
+          {/* Home and About to the left side */}
+          <ul className="navbar-nav">
+            <li className="nav-item"><Link className="nav-link" href="/">Home</Link></li>
+            <li className="nav-item"><Link className="nav-link" href="/about">About</Link></li>
+          </ul>
 
-<nav className="navbar navbar-expand-lg navbar-dark bg-dark">
-  <div className="container">
-    <Link className="navbar-brand" href="/">SingaDrive</Link>
-    <button className="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-      <span className="navbar-toggler-icon"></span>
-    </button>
-    <div className="collapse navbar-collapse" id="navbarSupportedContent">
-      {/* Move Home and About to the left side */}
-      <ul className="navbar-nav">
-        <li className="nav-item"><Link className="nav-link" href="/">Home</Link></li>
-        <li className="nav-item"><Link className="nav-link" href="/about">About</Link></li>
-      </ul>
-
-      {/* Add Login and Signup buttons to the right side */}
-      <ul className="navbar-nav ms-auto">
-        <li className="nav-item">
-          <Link className="btn btn-primary mx-2" href="/login">Login</Link>
-        </li>
-        <li className="nav-item">
-          <Link className="btn btn-success" href="/register">Signup</Link>
-        </li>
-      </ul>
-    </div>
-  </div>
-</nav>
+          { /* User Account panel at right side */ }
+          <ul className="navbar-nav ms-auto">
+            {user ? (
+              // If user exists, show user information
+              <li className="nav-item">
+                <span className="navbar-text mx-2">Welcome, {user.username}</span>
+                <Link href="/logout"><a className="btn btn-danger">Logout</a></Link>
+              </li>
+            ) : (
+              // If no user, show Login and Signup buttons
+              <>
+                <li className="nav-item">
+                  <Link href="/login"><a className="btn btn-primary mx-2">Login</a></Link>
+                </li>
+                <li className="nav-item">
+                  <Link href="/register"><a className="btn btn-success">Signup</a></Link>
+                </li>
+              </>
+            )}
+          </ul>
+        </div>
+      </div>
+    </nav>
   );
 };
 
 export default TopNavbar;
+
