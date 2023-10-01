@@ -7,7 +7,6 @@ import LoginPasswordInput from './LoginPasswordInput';
 import LoginUsernameInput from './LoginUsernameInput';
 import { UAParser } from 'ua-parser-js';
 import { setSessionToken } from '@/utils/accountSessionCookie';
-import { waitForDebugger } from 'inspector';
 
 interface LoginFormProps {
     endpointUrl: string;

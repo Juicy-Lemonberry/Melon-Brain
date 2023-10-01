@@ -7,7 +7,6 @@ import LoginForm from '@/components/loginform/LoginForm';
 import '@/styles/RegisterLoginForm.scss';
 
 function LoginPage() {
-
     return (
         <body>
             <TopNavbar />

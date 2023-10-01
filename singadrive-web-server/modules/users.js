@@ -83,7 +83,6 @@ router.post('/register', async (req, res) => {
 
         // Hash the password, then insert the user into the database.
         bcrypt.hash(password, 10).then(async function(hashedPassword) {
-            console.log(hashedPassword);
             const insertResult = await client.query('INSERT INTO "user"."accounts" (username, email, hashed_password) VALUES ($1, $2, $3)', [username, email, hashedPassword]);
             client.release();
             if (insertResult.rowCount !== 1) {
@@ -100,11 +99,8 @@ router.post('/register', async (req, res) => {
 });
 
 router.post('/login', async (req, res) => {
-    console.log("GET");
     const password = req.body.password;
     const username = req.body.username;
-    console.log(password);
-    console.log(username);
 
     // Perform the same validation as client-side
     // NOTE: Since the validation should done on the client-side,
@@ -128,7 +124,6 @@ router.post('/login', async (req, res) => {
         // If there is no user with the same username...
         let resultObj = {};
         if (result.rows.length > 0) {
-            console.log(result.rows[0]);
             resultObj = result.rows[0];
             if (resultObj.message === 'NOT FOUND') {
                 res.status(400).send('USERNAME');
@@ -142,7 +137,6 @@ router.post('/login', async (req, res) => {
         }
 
         const hashedPassword = resultObj.hashed_password.toString('utf8');
-        // Check if the password is correct.
         const isPasswordCorrect = await bcrypt.compare(password, hashedPassword);
         if (!isPasswordCorrect) {
             res.status(400).send('INVALID PASSWORD');
@@ -160,6 +154,45 @@ router.post('/login', async (req, res) => {
         console.error(error);
         res.status(500).send('Internal Server Error');
     }
+});
+
+router.post('/authenticate', async (req, res) => {
+  const sessionToken = req.body.session_token;
+  const browserName = req.body.browser_name;
+
+  try {
+    const client = await postgresPool.connect();
+    
+    const query = 'SELECT * FROM "user".check_session_token($1, $2);';
+    const result = await client.query(query, [sessionToken, browserName]);
+
+    let resultObj = {};
+    if (result.rows.length > 0) {
+      resultObj = result.rows[0];
+      
+      if (resultObj.message === 'INVALID') {
+        res.status(400).send('INVALID');
+        client.release();
+        return;
+      } else if (resultObj.message === 'BROWSER') {
+        res.status(500).send('ERROR');
+        client.release();
+        console.log("One of the user's account was attempted to be logged in by session token, but browser mismatch!")
+        return;
+      } else if (resultObj.message === 'EXPIRED') {
+        res.status(400).send('EXPIRED');
+        client.release();
+        return;
+      }
+    }
+
+    res.status(200).json(resultObj);
+    client.release();
+ 
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Internal Server Error');
+  }
 });
 
 module.exports = router;
