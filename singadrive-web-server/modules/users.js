@@ -186,7 +186,6 @@ router.post('/authenticate', async (req, res) => {
       }
     }
 
-    delete resultObj.message;
     res.status(200).json(resultObj);
     client.release();
  
