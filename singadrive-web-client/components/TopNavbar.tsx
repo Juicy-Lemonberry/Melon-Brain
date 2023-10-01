@@ -1,5 +1,5 @@
 'use client'
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import { getSessionToken, removeSessionToken } from '@/utils/accountSessionCookie';
 import UAParser from 'ua-parser-js';
@@ -7,6 +7,11 @@ import config from '@/config';
 
 const TopNavbar: React.FC = () => {
   const [user, setUser] = useState(null);
+  
+  const handleLogout = () => {
+    removeSessionToken();
+    window.location.href = '/login';
+  };
 
   async function getUserData(): Promise<void> {
     const parser = new UAParser();
@@ -66,10 +71,14 @@ const TopNavbar: React.FC = () => {
           <ul className="navbar-nav ms-auto">
             {user ? (
               // If user exists, show user information
-              <li className="nav-item">
-                <span className="navbar-text mx-2">{user["username"]}</span>
-                <Link href="/logout"><a className="btn btn-danger">Logout</a></Link>
-              </li>
+              <>
+                <li className="nav-item">
+                  <span className="navbar-text mx-2">{user["username"]}</span>
+                </li>
+                <li className="nav-item">
+                  <button onClick={handleLogout} className="btn btn-danger">Logout</button>
+                </li>
+              </>
             ) : (
               // If no user, show Login and Signup buttons
               <>
