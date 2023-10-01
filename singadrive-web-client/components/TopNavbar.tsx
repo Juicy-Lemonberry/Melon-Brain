@@ -1,7 +1,7 @@
 'use client'
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { getSessionToken } from '@/utils/accountSessionCookie';
+import { getSessionToken, removeSessionToken } from '@/utils/accountSessionCookie';
 import UAParser from 'ua-parser-js';
 import config from '@/config';
 
@@ -31,8 +31,11 @@ const TopNavbar: React.FC = () => {
     const data = await response.json();
 
     if (response.ok) {
-      console.log(data);
-      setUser(data);
+      if (data["message"] === "OK") {
+        setUser(data);
+      } else {
+        removeSessionToken();
+      }
     } else {
       console.error('Failed to fetch user data:', data);
     }
@@ -64,7 +67,7 @@ const TopNavbar: React.FC = () => {
             {user ? (
               // If user exists, show user information
               <li className="nav-item">
-                <span className="navbar-text mx-2">Welcome, {user["username"]}</span>
+                <span className="navbar-text mx-2">{user["username"]}</span>
                 <Link href="/logout"><a className="btn btn-danger">Logout</a></Link>
               </li>
             ) : (
