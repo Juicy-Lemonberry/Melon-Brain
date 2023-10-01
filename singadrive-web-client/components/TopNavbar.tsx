@@ -1,5 +1,5 @@
 'use client'
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { getSessionToken, removeSessionToken } from '@/utils/accountSessionCookie';
 import UAParser from 'ua-parser-js';
