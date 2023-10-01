@@ -198,10 +198,15 @@ router.post('/authenticate', async (req, res) => {
 router.delete('/session', async (req, res) => {
   const sessionToken = req.body.session_token;
 
+  if (!sessionToken){
+    res.status(400).send('Invalid session token');
+    return
+  }
+
   try {
     const client = await postgresPool.connect();
 
-    const queryText = 'SELECT * FROM delete_session_token($1);';
+    const queryText = 'SELECT * FROM "user".delete_session_token($1);';
     const queryValues = [sessionToken];
     const result = await client.query(queryText, queryValues);
 

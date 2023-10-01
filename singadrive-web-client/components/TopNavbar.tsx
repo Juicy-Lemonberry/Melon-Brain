@@ -8,11 +8,27 @@ import config from '@/config';
 const TopNavbar: React.FC = () => {
   const [user, setUser] = useState(null);
   
-  const handleLogout = () => {
-    removeSessionToken();
-    window.location.href = '/login';
+  const handleLogout = async () => {
+    try {
+      // Send a DELETE request to the server to delete the session token
+      await fetch(`${config.API_BASE_URL}/api/users/session`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ session_token: getSessionToken() })
+      });
+      
+      removeSessionToken();
+      window.location.href = '/login';
+    } catch (error) {
+      console.error('An error occurred:', error);
+    }
   };
+    
 
+  // Request to authenticate session token from cookie,
+  // then fetch user data.
   async function getUserData(): Promise<void> {
     const parser = new UAParser();
     const browserName = parser.getBrowser().name;
