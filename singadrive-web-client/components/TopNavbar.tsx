@@ -1,4 +1,4 @@
-
+'use client'
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { getSessionToken } from '@/utils/accountSessionCookie';
@@ -7,7 +7,6 @@ import config from '@/config';
 
 const TopNavbar: React.FC = () => {
   const [user, setUser] = useState(null);
-  const token = getSessionToken();
 
   async function getUserData(): Promise<void> {
     const parser = new UAParser();
@@ -32,6 +31,7 @@ const TopNavbar: React.FC = () => {
     const data = await response.json();
 
     if (response.ok) {
+      console.log(data);
       setUser(data);
     } else {
       console.error('Failed to fetch user data:', data);
@@ -39,10 +39,11 @@ const TopNavbar: React.FC = () => {
   }
 
   useEffect(() => {
+    const token = getSessionToken();
     if (token) {
       getUserData();
     }
-  }, [token]);
+  }, []);
 
   return (
     <nav className="navbar navbar-expand-lg navbar-dark bg-dark">
@@ -63,7 +64,7 @@ const TopNavbar: React.FC = () => {
             {user ? (
               // If user exists, show user information
               <li className="nav-item">
-                <span className="navbar-text mx-2">Welcome, {user.username}</span>
+                <span className="navbar-text mx-2">Welcome, {user["username"]}</span>
                 <Link href="/logout"><a className="btn btn-danger">Logout</a></Link>
               </li>
             ) : (
