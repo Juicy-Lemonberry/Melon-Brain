@@ -56,6 +56,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ endpointUrl }) => {
             if (response.status === 200) {
               const { message, token } =  await response.json();
               setSessionToken(token);
+              window.location.href = "/";
             } else {
               const message = await response.text();
               handleSubmitError(message);

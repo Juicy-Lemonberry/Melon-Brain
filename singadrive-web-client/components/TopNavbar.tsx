@@ -7,7 +7,28 @@ import config from '@/config';
 
 const TopNavbar: React.FC = () => {
   const [user, setUser] = useState(null);
+  
+  const handleLogout = async () => {
+    try {
+      // Send a DELETE request to the server to delete the session token
+      await fetch(`${config.API_BASE_URL}/api/users/session`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ session_token: getSessionToken() })
+      });
+      
+      removeSessionToken();
+      window.location.href = '/login';
+    } catch (error) {
+      console.error('An error occurred:', error);
+    }
+  };
+    
 
+  // Request to authenticate session token from cookie,
+  // then fetch user data.
   async function getUserData(): Promise<void> {
     const parser = new UAParser();
     const browserName = parser.getBrowser().name;
@@ -66,10 +87,14 @@ const TopNavbar: React.FC = () => {
           <ul className="navbar-nav ms-auto">
             {user ? (
               // If user exists, show user information
-              <li className="nav-item">
-                <span className="navbar-text mx-2">{user["username"]}</span>
-                <Link href="/logout"><a className="btn btn-danger">Logout</a></Link>
-              </li>
+              <>
+                <li className="nav-item">
+                  <span className="navbar-text mx-2">{user["username"]}</span>
+                </li>
+                <li className="nav-item">
+                  <button onClick={handleLogout} className="btn btn-danger">Logout</button>
+                </li>
+              </>
             ) : (
               // If no user, show Login and Signup buttons
               <>
