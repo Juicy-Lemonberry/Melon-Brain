@@ -2,7 +2,8 @@ import TopNavbar from '@/components/TopNavbar';
 import dynamic from 'next/dynamic';
 import React from 'react';
 
-const DynamicRentalMapView = dynamic(() => import('@/components/RentalMapView'), {
+
+const DynamicRentalMapView = dynamic(() => import('@/components/rentcarmap/RentalMapView'), {
   ssr: false 
 });
 
