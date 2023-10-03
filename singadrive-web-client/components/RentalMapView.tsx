@@ -13,6 +13,10 @@ interface Car {
 const RentalMapView: React.FC = () => {
   const [carLocations, setCarLocations] = useState<Car[]>([]);
   const mapStartPosition: [number, number] = [1.3521, 103.8198];
+  const maxBounds: [[number, number], [number, number]] = [
+    [1.16, 103.59],
+    [1.47, 104.04]
+  ];
 
   useEffect(() => {
     fetch(config.API_BASE_URL + '/api/rent-map/rentable-cars')
@@ -24,7 +28,13 @@ const RentalMapView: React.FC = () => {
   }, []);
 
   return (
-    <MapContainer center={mapStartPosition} zoom={13} style={{ height: '100%', width: '100%' }}>
+    <MapContainer 
+      center={mapStartPosition} 
+      zoom={13} 
+      style={{ height: '100%', width: '100%' }}
+      maxBounds={maxBounds}  
+      minZoom={11} 
+    >
       <TileLayer
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
