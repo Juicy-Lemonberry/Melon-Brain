@@ -8,12 +8,15 @@ app.use(cors());
 
 const exampleRoutes = require('./modules/example');
 const usersRoutes = require('./modules/users');
+const rentMapRoutes = require('./modules/rentMap');
 
 // URL calls to '/api/example/...' will be passed to `modules/example.js'.
 app.use("/api/example", exampleRoutes);
 
 app.use("/api/users", usersRoutes);
+app.use("/api/rent-map", rentMapRoutes);
 
+// TODO: Remove this once not under use....
 app.get("/api/data", (req, res) => {
     res.json({
         "testman": ["test1", "test2", "welp"] 

@@ -1,4 +1,4 @@
-
+import TopNavbar from '@/components/TopNavbar';
 import dynamic from 'next/dynamic';
 import React from 'react';
 
@@ -8,9 +8,12 @@ const DynamicRentalMapView = dynamic(() => import('@/components/RentalMapView'),
 
 const RentMap: React.FC = () => {
   return (
-    <div style={{ height: '100vh' }}>
-      <DynamicRentalMapView />
-    </div>
+    <>
+      <TopNavbar/>
+      <div style={{ height: '100vh' }}>
+        <DynamicRentalMapView />
+      </div>
+    </>
   );
 };
 
