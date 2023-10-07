@@ -4,6 +4,7 @@ import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Container, Row, Col, Card } from 'react-bootstrap';
 import { RandomAvatar } from 'react-random-avatars';
+import config from '@/config';
 
 interface UserProfile {
   username: string;
@@ -11,8 +12,6 @@ interface UserProfile {
   description: string;
   // Add more fields as needed
 }
-
-
 
 const ProfilePage = () => {
   const searchParams = useSearchParams();
@@ -29,21 +28,39 @@ const ProfilePage = () => {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
 
   useEffect(() => {
-    console.log(username);
-    if (username && username != '') {
-      // TODO: Fetch user profile from API
-      setUserProfile({
-        username: "derpeeeee",
-        email: 'test@outlook.com',
-        description: "Derpman!"
-      });
+    if (username && username !== '') {
+      const apiRoute = config.API_BASE_URL + "/api/public-users/profile";
+
+      fetch(`${apiRoute}?username=${username}`)
+        .then(response => response.json())
+        .then(data => {
+
+          console.log(data);
+          if (data.message === 'SUCCESS') {
+            setUserProfile(data.data);
+          } else if (data.message === 'NOT FOUND') {
+            setUserProfile({
+              username: 'NOT FOUND',
+              email: '',
+              description: 'This user does not exist!'
+            });
+          }
+
+        })
+        .catch(error => {
+          console.error('Error fetching user profile:', error);
+          setUserProfile({
+              username: 'ERROR',
+              email: '',
+              description: 'Error fetching user profile, try again or contact admin!'
+            });
+        });
     } else {
-      // User doesn't exist...
-      // TODO: Improve UI to show error page or something instead?
+
       setUserProfile({
-        username: "NOT FOUND",
+        username: 'NOT FOUND',
         email: '',
-        description: "This user does not exists!"
+        description: 'This user does not exist!'
       });
     }
   }, [username]);

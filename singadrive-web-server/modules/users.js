@@ -5,10 +5,6 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcrypt');
 const { Pool } = require('pg');
-const publicUserDataRoute = require('./publicUsers.js');
-
-// NOTE: Route all public data information to this module...
-router.use('/public', publicUserDataRoute);
 
 const postgresPool = new Pool({
     host: 'localhost',

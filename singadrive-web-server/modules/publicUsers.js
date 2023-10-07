@@ -11,8 +11,9 @@ const postgresPool = new Pool({
     port: 5432
 });
 
-router.post('/profile', async (req, res) => {
-  const username = req.body.username;
+router.get('/profile', async (req, res) => {
+  console.log(req.query);
+  const username = req.query.username;
 
   try {
     const client = await postgresPool.connect();

@@ -9,10 +9,12 @@ app.use(cors());
 const exampleRoutes = require('./modules/example');
 const usersRoutes = require('./modules/users');
 const rentMapRoutes = require('./modules/rentMap');
+const usersPublicDataRoutes = require('./modules/publicUsers');
 
 // URL calls to '/api/example/...' will be passed to `modules/example.js'.
 app.use("/api/example", exampleRoutes);
 
+app.use("/api/public-users", usersPublicDataRoutes);
 app.use("/api/users", usersRoutes);
 app.use("/api/rent-map", rentMapRoutes);
 
