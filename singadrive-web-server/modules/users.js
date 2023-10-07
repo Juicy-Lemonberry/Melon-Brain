@@ -5,6 +5,10 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcrypt');
 const { Pool } = require('pg');
+const publicUserDataRoute = require('./publicUsers.js');
+
+// NOTE: Route all public data information to this module...
+router.use('/public', publicUserDataRoute);
 
 const postgresPool = new Pool({
     host: 'localhost',
@@ -40,6 +44,7 @@ function _isValidEmail(email) {
 
     // TODO: Check if email actually exists in SMTP server.
 }
+
 
 router.post('/register', async (req, res) => {
     const email = req.body.email;
@@ -223,5 +228,6 @@ router.delete('/session', async (req, res) => {
     res.status(500).send('Internal Server Error');
   }
 });
+
 
 module.exports = router;
