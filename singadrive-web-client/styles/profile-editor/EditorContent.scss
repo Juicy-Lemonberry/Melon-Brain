@@ -7,6 +7,8 @@
 
   .input-group {
     margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
 
     label {
       display: block;
@@ -30,5 +32,9 @@
     border-radius: 4px;
     cursor: pointer;
   }
+}
+
+.input-label, .input-control {
+  width: 100%;
 }
 

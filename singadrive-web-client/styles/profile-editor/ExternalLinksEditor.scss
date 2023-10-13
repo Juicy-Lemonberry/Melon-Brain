@@ -1,0 +1,19 @@
+.link-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+
+.title-input {
+  flex: 0.3;
+  margin-right: 10px; 
+}
+
+.url-input {
+  flex: 0.7;
+}
+
+.button-row {
+  margin-top: 10px;
+}
