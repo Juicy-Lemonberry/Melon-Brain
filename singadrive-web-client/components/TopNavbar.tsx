@@ -92,7 +92,7 @@ const TopNavbar: React.FC = () => {
               <NavDropdown.Item href={`/profile?username=${user['username']}`}>View Profile</NavDropdown.Item>
               <NavDropdown.Item href="/rentals">View Rentals</NavDropdown.Item>
               <NavDropdown.Divider />
-              <NavDropdown.Item href="/edit-profile">Edit Profile</NavDropdown.Item>
+              <NavDropdown.Item href="/profile/edit">Edit Profile</NavDropdown.Item>
               <NavDropdown.Divider />
               <NavDropdown.Item onClick={handleLogout}>Logout</NavDropdown.Item>
             </NavDropdown>

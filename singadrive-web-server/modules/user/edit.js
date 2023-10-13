@@ -32,7 +32,7 @@ router.post("/get-data", async (req, res) => {
     // Check if session token is valid,
     // and fetch related user information from it...
     const query = 'SELECT * FROM "user".check_session_token($1, $2);';
-    const result = await client.query(query, [sessionToken, browserName]);
+    const result = await client.query(query, [sessionToken, browserInfo]);
     if (result.rows.length > 0) {
       resultObj = result.rows[0];
       

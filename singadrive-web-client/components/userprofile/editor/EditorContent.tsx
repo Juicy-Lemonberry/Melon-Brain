@@ -19,22 +19,21 @@ const DescriptionEditor = dynamic(() => import('@/components/userprofile/editor/
 
 const ProfileEditor: React.FC = () => {
   const [username, setUsername] = useState<string>('');
-  const [displayName, setDisplayName] = useState('Test');
+  const [displayName, setDisplayName] = useState('');
   const [birthday, setBirthday] = useState<Date | null>(null);
   const [externalLinks, setExternalLinks] = useState<ExternalLink[]>([]);
-  const [email, setEmail] = useState('testmail');
+  const [email, setEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [description, setNewDescription] = useState<string>('');
 
 
-  async function getUserData(): Promise<void> {
+  async function setUserData(token: string): Promise<void> {
     const parser = new UAParser();
     const browserName = parser.getBrowser().name;
-    const sessionToken = getSessionToken();
 
     const jsonData = {
-      "browser_name": browserName,
-      "session_token": sessionToken
+      "browser_info": browserName,
+      "session_token": token
     };
 
     const options = {
@@ -44,14 +43,42 @@ const ProfileEditor: React.FC = () => {
       },
       body: JSON.stringify(jsonData)
     };
+    
+    const apiRoute = config.API_BASE_URL + '/api/users-edit/get-data';
+    const response = await fetch(apiRoute, options);
+    const data = await response.json();
 
-    // TODO: Send API Request to get data....
+    if (!response.ok) {
+      console.error('Failed to fetch user data: ', data);
+      return;
+    }
+    
+    switch (data.message) {
+      case "INVALID":
+        setUsername("Error loading data...");
+        return;
+      case "BROWSER":
+        setUsername("Session token expired, login again!");
+        removeSessionToken();
+        return;
+      case "EXPIRED":
+        setUsername("Session token expired, login again!");
+        removeSessionToken();
+        return;
+    }
+
+    setUsername(data.username ?? 'N/A');
+    setDisplayName(data.display_name ?? 'N/A');
+    setBirthday(data.birthday ? new Date(data.birthday) : null);
+    setExternalLinks(data.external_links ?? []);
+    setEmail(data.email ?? 'N/A');
+    setNewDescription(data.description ?? '');
   }
 
   useEffect(() => {
     const token = getSessionToken();
     if (token) {
-      // TODO Get user data and populate...
+      setUserData(token as string).catch((err) => console.error('Error fetching user data:', err));
     }
   }, []);
 
