@@ -4,20 +4,31 @@ import config from '@/config';
 import dynamic from 'next/dynamic';
 import React, { useEffect, useState } from 'react';
 import '@/styles/profile-editor/EditorContent.scss';
-import { getSessionToken, removeSessionToken } from '@/utils/accountSessionCookie';
+import { getSessionToken, removeSessionToken, setSessionToken } from '@/utils/accountSessionCookie';
 import DatePicker from "react-datepicker";
 import 'react-datepicker/dist/react-datepicker.css';
+
+
+const DescriptionEditor = dynamic(() => import('@/components/userprofile/editor/DescriptionEditor'), {
+  ssr: false
+});
 
 interface ExternalLink {
   title: string;
   url: string;
 }
 
-const DescriptionEditor = dynamic(() => import('@/components/userprofile/editor/DescriptionEditor'), {
+const ExternalLinksEditor = dynamic(() => import('@/components/userprofile/editor/ExternalLinksEditor'), {
   ssr: false
 });
 
-const ExternalLinksEditor = dynamic(() => import('@/components/userprofile/editor/ExternalLinksEditor'), {
+interface SessionToken {
+  browserInfo: string;
+  lastUsedDate: Date;
+  firstLoginDate: Date;
+}
+
+const SessionTokenEditor = dynamic(() => import('@/components/userprofile/editor/SessionTokenEditor'), {
   ssr: false
 });
 
@@ -25,11 +36,11 @@ const ProfileEditor: React.FC = () => {
   const [username, setUsername] = useState<string>('');
   const [displayName, setDisplayName] = useState('');
   const [birthday, setBirthday] = useState<Date | null>(null);
-  const [externalLinks, setExternalLinks] = useState<{ title: string; url: string }[]>([]);
+  const [externalLinks, setExternalLinks] = useState<ExternalLink[]>([]);
   const [email, setEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [description, setNewDescription] = useState<string>('');
-
+  const [sessionTokens, setSessionTokens] = useState<SessionToken[]>([]);
 
   async function setUserData(token: string): Promise<void> {
     const parser = new UAParser();
@@ -77,7 +88,25 @@ const ProfileEditor: React.FC = () => {
     setExternalLinks(data.external_links ?? []);
     setEmail(data.email ?? 'N/A');
     setNewDescription(data.description ?? '');
+    // Set session token if exists...
+    if (data.session_tokens) {
+      const transformedSessionTokens = data.session_tokens.map((token: any) => ({
+        browserInfo: token.browser_info,
+        lastUsedDate: new Date(token.last_used),
+        firstLoginDate: new Date(token.created_at)
+      }));
+      setSessionTokens(transformedSessionTokens);
+    }
   }
+
+  const removeExistingSessionToken = (index: number) => {
+    // Remove the session token at the given index
+    const newSessionTokens = [...sessionTokens];
+    newSessionTokens.splice(index, 1);
+    setSessionTokens(newSessionTokens);
+    // TODO: Request to backend
+  };
+
 
   useEffect(() => {
     const token = getSessionToken();
@@ -88,7 +117,7 @@ const ProfileEditor: React.FC = () => {
 
   return (
       <>
-        <h1>Edit Profile</h1>
+        <h1 className="center-text">Edit Profile</h1>
         <div className="profile-editor">
 
           <div className="input-group">
@@ -151,6 +180,12 @@ const ProfileEditor: React.FC = () => {
           </div>
           <hr/>
           <button type="submit">Save Changes</button>
+      </div>
+      
+      <hr/>
+      <h1 className="center-text">Account Sessions</h1>
+      <div className="session-token-editor-wrapper">
+        <SessionTokenEditor sessionTokens={sessionTokens} removeSessionTokens={removeExistingSessionToken}/>
       </div>
     </>
   );
