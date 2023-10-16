@@ -21,10 +21,36 @@ const mongoConfig = {
     dbName: `${process.env.MONGODB_DB}`
 };
 
-router.post("/get-data", async (req, res) => {
+//#region UTILs
+function _isValidPassword(password) {
+    const passwordRegex = /^[A-Za-z0-9!@#$%^&*()_+{}\[\]:;<>,.?~\\-]+$/;
+    if (!password) {
+        return false;
+    }
+    return passwordRegex.test(password);
+}
 
+function _isValidEmail(email) {
+    const emailRegex = /^[A-Za-z0-9+_.-]+@(.+)$/;
+    if (!email) {
+        return false;
+    }    
+    return emailRegex.test(email);
+
+    // TODO: Check if email actually exists in SMTP server.
+}
+//#endregion
+
+const AccountInformation = require('../../models/accountInformation');
+
+router.post("/get-data", async (req, res) => {
   const sessionToken = req.body.session_token;
   const browserInfo = req.body.browser_info;
+  if (!sessionToken || !browserInfo) {
+    res.status(400).json({ message: 'BODY FIELD' });
+    return;
+  }
+
   try {
     let resultObj = {};
     const client = await postgresPool.connect();
@@ -77,6 +103,84 @@ router.post("/get-data", async (req, res) => {
     res.status(500).send('Internal Server Error');
   } finally {
     mongoose.connection.close();
+  }
+});
+
+//#region Update Data Utils
+
+
+async function verifyAndUpdateCredentials(client, sessionToken, browserInfo, accountInfo) {
+  const updateCredentialsQuery = 'SELECT * FROM "user"."update_account_credentials"($1, $2, $3, $4)';
+  const updateCredentialsResult = await client.query(updateCredentialsQuery, [sessionToken, browserInfo, accountInfo.hashed_password, accountInfo.email]);
+  
+  let resultObj = {};
+  if (updateCredentialsResult.rows.length > 0) {
+    resultObj = updateCredentialsResult.rows[0];
+    if (resultObj.message !== 'OK') {
+      return { status: 400, message: resultObj.message };
+    }
+  }
+
+  return { status: 200, message: 'OK' };
+}
+
+async function handleSensitiveInfoUpdate(req, res, client, accountInfo) {
+  // Check for required fields for sensitive data update
+  if (!req.body.verification_password || !req.body.username) {
+    return { status: 400, message: 'MISSING VERIFICATION' };
+  }
+
+  const username = req.body.username;
+  const verificationPassword = req.body.verification_password;
+
+  // Validate the user's current password
+  const getCurrentHashedPasswordQuery = 'SELECT * FROM "user".find_user_hashed_password($1)';
+  const hashedPasswordResult = await client.query(getCurrentHashedPasswordQuery, [username]);
+
+  let resultObj = {};
+  if (hashedPasswordResult.rows.length > 0) {
+    resultObj = hashedPasswordResult.rows[0];
+    if (resultObj.message !== 'OK') {
+      return { status: 400, message: resultObj.message };
+    }
+  }
+
+  const hashedPassword = resultObj.hashed_password.toString('utf8');
+  const isPasswordCorrect = await bcrypt.compare(verificationPassword, hashedPassword);
+  if (!isPasswordCorrect) {
+    return { status: 400, message: 'INVALID PASSWORD VERIFICATION' };
+  }
+
+  return await verifyAndUpdateCredentials(client, req.body.session_token, req.body.browser_info, accountInfo);
+}
+//#endregion
+
+router.post("/update-data", async (req, res) => {
+  const client = await postgresPool.connect();
+  const accountInfo = new AccountInformation();
+
+  try {
+    accountInfo.display_name = req.body.display_name ?? '';
+    accountInfo.description = req.body.description ?? '';
+    accountInfo.external_links = req.body.external_links ?? [];
+
+    let result;
+    if (req.body.password || req.body.email) {
+      result = await handleSensitiveInfoUpdate(req, res, client, accountInfo);
+      if (result.status !== 200) {
+        res.status(result.status).json({ message: result.message });
+        return;
+      }
+    }
+
+    // TODO: Update non-sensitive info on PostgreSQL and MongoDB...
+
+    res.status(200).json({ message: "OK" });
+  } catch (error) {
+    console.error('Error executing query', error);
+    res.status(500).send('Internal Server Error');
+  } finally {
+    client.release();
   }
 });
 
