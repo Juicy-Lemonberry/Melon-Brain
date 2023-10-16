@@ -90,12 +90,19 @@ router.post("/get-data", async (req, res) => {
     });
 
     // Get description, birthday and external links from MongoDB
-    const accountData = await AccountsModel.findOne({ id: resultObj.account_id });
-    if (accountData) {
-      resultObj.description = accountData.description;
-      resultObj.birthday = accountData.birthday;
-      resultObj.external_links = accountData.external_links;
-    }
+    const accountData = await AccountsModel.findOneAndUpdate(
+      { id: resultObj.account_id },
+      {},
+      {
+        new: true,
+        upsert: true // create a new document if not exists...
+      }
+    );
+    
+    resultObj.description = accountData.description;
+    resultObj.birthday = accountData.birthday;
+    resultObj.external_links = accountData.external_links;
+    
 
     res.status(200).json(resultObj); 
   } catch (error) {
@@ -109,7 +116,7 @@ router.post("/get-data", async (req, res) => {
 //#region Update Data Utils
 
 
-async function verifyAndUpdateCredentials(client, sessionToken, browserInfo, accountInfo) {
+async function _verifyAndUpdateCredentials(client, sessionToken, browserInfo, accountInfo) {
   const updateCredentialsQuery = 'SELECT * FROM "user"."update_account_credentials"($1, $2, $3, $4)';
   const updateCredentialsResult = await client.query(updateCredentialsQuery, [sessionToken, browserInfo, accountInfo.hashed_password, accountInfo.email]);
   
@@ -124,7 +131,7 @@ async function verifyAndUpdateCredentials(client, sessionToken, browserInfo, acc
   return { status: 200, message: 'OK' };
 }
 
-async function handleSensitiveInfoUpdate(req, res, client, accountInfo) {
+async function _handleSensitiveInfoUpdate(req, res, client, accountInfo) {
   // Check for required fields for sensitive data update
   if (!req.body.verification_password || !req.body.username) {
     return { status: 400, message: 'MISSING VERIFICATION' };
@@ -139,7 +146,7 @@ async function handleSensitiveInfoUpdate(req, res, client, accountInfo) {
 
   let resultObj = {};
   if (hashedPasswordResult.rows.length > 0) {
-    resultObj = hashedPasswordResult.rows[0];
+    let resultObj = hashedPasswordResult.rows[0];
     if (resultObj.message !== 'OK') {
       return { status: 400, message: resultObj.message };
     }
@@ -151,36 +158,126 @@ async function handleSensitiveInfoUpdate(req, res, client, accountInfo) {
     return { status: 400, message: 'INVALID PASSWORD VERIFICATION' };
   }
 
-  return await verifyAndUpdateCredentials(client, req.body.session_token, req.body.browser_info, accountInfo);
+  // Check what the user wants to change is valid
+  // email/password is optional...
+  // PostgreSQL function will retain old value in column if null is given...
+  if (req.body.email){
+    // Check if email format is valid...
+    const inputEmail = req.body.email;
+    if (!_isValidEmail(inputEmail)) {
+      return { status: 400, message: "INVALID INPUT EMAIL" };
+    }
+    accountInfo.email = inputEmail;
+  }
+  
+  if (req.body.password) {
+    // Check if password format is valid, then hash it.
+    const inputPassword = req.body.password;
+    if (!_isValidPassword(inputPassword)) {
+      return { status: 400, message: "INVALID INPUT PASSWORD" };
+    }
+    accountInfo.hashed_password = await bcrypt.hash(inputPassword, 10);
+  }
+
+  return await _verifyAndUpdateCredentials(client, req.body.session_token, req.body.browser_info, accountInfo);
+}
+
+async function _handleAccountInfoUpdate(req, res, client, accountInfo) {
+  const updateQuery = 'SELECT * FROM "user".update_account_details($1, $2, $3);';
+  const updateResult = await client.query(updateQuery, [req.body.session_token, req.body.browser_info, accountInfo.display_name]);
+  
+  if (updateResult.rows.length > 0) {
+    let resultObj = updateResult.rows[0];
+    if (resultObj.message !== 'OK') {
+      return { status: 400, message: resultObj.message };
+    }
+  }
+
+  return { status: 200, message: resultObj.message };
 }
 //#endregion
 
 router.post("/update-data", async (req, res) => {
-  const client = await postgresPool.connect();
-  const accountInfo = new AccountInformation();
+  const sessionToken = req.body.session_token;
+  const browserInfo = req.body.browser_info;
+  if (!sessionToken || !browserInfo) {
+    res.status(400).json({ message: 'BODY FIELD' });
+    return;
+  }
 
   try {
+    const client = await postgresPool.connect();
+    const accountInfo = new AccountInformation();
+   
     accountInfo.display_name = req.body.display_name ?? '';
     accountInfo.description = req.body.description ?? '';
     accountInfo.external_links = req.body.external_links ?? [];
+    accountInfo.birthday = req.body.birthday ?? null;
 
-    let result;
+    let result = {};
+    // Update sensitive information, if user gave any to update.
     if (req.body.password || req.body.email) {
-      result = await handleSensitiveInfoUpdate(req, res, client, accountInfo);
+      result = await _handleSensitiveInfoUpdate(req, res, client, accountInfo);
       if (result.status !== 200) {
         res.status(result.status).json({ message: result.message });
         return;
       }
     }
 
-    // TODO: Update non-sensitive info on PostgreSQL and MongoDB...
+    // Update non-sesntitive info on PostgreSQL.
+    result = await _handleAccountInfoUpdate(req, res, client, accountInfo);
+    if (result.status !== 200) {
+      res.status(result.status).json({ message: result.message });
+      return;
+    }
+    
+    // Find userI (for MongoDB)
+    let userID = null;
+    const query = 'SELECT * FROM "user".check_session_token($1, $2);';
+    result = await client.query(query, [sessionToken, browserInfo]);
+    if (result.rows.length > 0) {
+      let resultObj = result.rows[0];
+      
+      if (resultObj.message === 'INVALID') {
+        res.status(400).send('INVALID');
+        client.release();
+        return;
+      } else if (resultObj.message === 'BROWSER') {
+        res.status(500).send('ERROR');
+        client.release();
+        console.log("One of the user's account was attempted to be logged in by session token, but browser mismatch!")
+        return;
+      } else if (resultObj.message === 'EXPIRED') {
+        res.status(400).send('EXPIRED');
+        client.release();
+        return;
+      }
 
+      userID = resultObj.account_id;
+    }
+
+    await AccountsModel.findOneAndUpdate(
+      { id: userID },
+      {
+        $set: {
+          description: accountInfo.description,
+          birthday: accountInfo.birthday,
+          external_links: accountInfo.external_links
+        }
+      },
+      {
+        upsert: true // create new document if not exists...
+      }
+    );
+    
+    
     res.status(200).json({ message: "OK" });
   } catch (error) {
     console.error('Error executing query', error);
     res.status(500).send('Internal Server Error');
   } finally {
     client.release();
+    mongoose.connection.close();
   }
 });
 
