@@ -208,7 +208,8 @@ router.post("/update-data", async (req, res) => {
   try {
     const client = await postgresPool.connect();
     const accountInfo = new AccountInformation();
-   
+  
+    let sensitiveInformationChanged = false;
     accountInfo.display_name = req.body.display_name ?? '';
     accountInfo.description = req.body.description ?? '';
     accountInfo.external_links = req.body.external_links ?? [];
@@ -222,6 +223,7 @@ router.post("/update-data", async (req, res) => {
         res.status(result.status).json({ message: result.message });
         return;
       }
+      sensitiveInformationChanged = true;
     }
 
     // Update non-sesntitive info on PostgreSQL.
@@ -269,7 +271,20 @@ router.post("/update-data", async (req, res) => {
         upsert: true // create new document if not exists...
       }
     );
-    
+
+    // Log information...
+    let logDescription = `Changed Account Information`;
+    if (sensitiveInformationChanged) {
+      logDescription = `Changed Sensitive Account Information`;
+    }
+
+    await LogsModel.create(
+      { 
+        id: userID,
+        description: logDescription,
+        browser_info: browserInfo
+      }
+    );
     
     res.status(200).json({ message: "OK" });
   } catch (error) {
