@@ -8,7 +8,6 @@ import { getSessionToken, removeSessionToken, setSessionToken } from '@/utils/ac
 import DatePicker from "react-datepicker";
 import 'react-datepicker/dist/react-datepicker.css';
 
-
 const DescriptionEditor = dynamic(() => import('@/components/userprofile/editor/DescriptionEditor'), {
   ssr: false
 });
@@ -32,6 +31,14 @@ const SessionTokenEditor = dynamic(() => import('@/components/userprofile/editor
   ssr: false
 });
 
+const PasswordRequestor = dynamic(() => import('@/components/userprofile/editor/PasswordRequest'), {
+  ssr: false
+});
+
+function isNullOrWhitespace(str: String) {
+  return !str || !str.trim();
+}
+
 const ProfileEditor: React.FC = () => {
   const [username, setUsername] = useState<string>('');
   const [displayName, setDisplayName] = useState('');
@@ -41,7 +48,16 @@ const ProfileEditor: React.FC = () => {
   const [newPassword, setNewPassword] = useState('');
   const [description, setNewDescription] = useState<string>('');
   const [sessionTokens, setSessionTokens] = useState<SessionToken[]>([]);
+  const [currentPassword, setCurrentPassword] = useState<string | null>(null);
 
+  // State to show/hide password request popup...
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  function handlePasswordSubmit(password: string): void {
+    setCurrentPassword(currentPassword);
+    setShowPasswordModal(false);
+  }
+
+  // To request, and set user data on page after content is first loaded.
   async function setUserData(token: string): Promise<void> {
     const parser = new UAParser();
     const browserName = parser.getBrowser().name;
@@ -104,7 +120,8 @@ const ProfileEditor: React.FC = () => {
     const newSessionTokens = [...sessionTokens];
     newSessionTokens.splice(index, 1);
     setSessionTokens(newSessionTokens);
-    // TODO: Request to backend
+    // TODO: Request to backend remove token...
+    window.location.reload();
   };
 
 
@@ -115,77 +132,146 @@ const ProfileEditor: React.FC = () => {
     }
   }, []);
 
+  async function handleSaveChanges(): Promise<void> {
+    const parser = new UAParser();
+    const browserName = parser.getBrowser().name;
+
+    const jsonData: { [key: string]: any } = {
+      "browser_info": browserName,
+      "display_name": displayName,
+      "description": description,
+      "external_links": externalLinks,
+      "birthday": birthday,
+      "username": username
+    };
+
+    // Changing sensitive information (password/email),
+    // require additional verification through current password...
+    const changeSensitiveInformation = isNullOrWhitespace(email) || isNullOrWhitespace(newPassword);
+    if (changeSensitiveInformation) {
+      setShowPasswordModal(true);
+      jsonData["verification_password"] = currentPassword;
+
+      if (!isNullOrWhitespace(email)) {
+        jsonData["email"] = email;
+      }
+      if (!isNullOrWhitespace(newPassword)) {
+        jsonData["password"] = newPassword;
+      }
+    }
+
+    jsonData["session_token"] = getSessionToken();
+
+    const options = {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(jsonData)
+    };
+    const apiRoute = config.API_BASE_URL + '/api/users-edit/update-data';
+    const response = await fetch(apiRoute, options);
+    const responseData = await response.json();
+    
+    if (!response.ok) {
+      console.error('Failed to update user data: ', responseData);
+      // TODO: Show user error based on response message/code.
+      return;
+    }
+
+    // TODO: Handle responseData.message
+    window.location.reload();
+  };
+
   return (
-      <>
-        <h1 className="center-text">Edit Profile</h1>
-        <div className="profile-editor">
-
-          <div className="input-group">
-            <div className="input-label">
-              <label>Username</label>
-            </div>
-            <div className="input-control">
-              <span>{username}</span>
-            </div>
+    <>
+      <h1 className="center-text">Edit Profile</h1>
+      <div className="profile-editor">
+        <div className="input-group">
+          <div className="input-label">
+            <label>Username</label>
           </div>
+          <div className="input-control">
+            <span>{username}</span>
+          </div>
+        </div>
 
-          <div className="input-group">
-            <label htmlFor="displayName">Display Name</label>
-            <input
-              type="text"
-              id="displayName"
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
+        <div className="input-group">
+          <label htmlFor="displayName">Display Name</label>
+          <input
+            type="text"
+            id="displayName"
+            value={displayName}
+            onChange={(e) => setDisplayName(e.target.value)}
+          />
+        </div>
+
+        <div className="input-group">
+          <div className="input-label">
+            <label>Birthday</label>
+          </div>
+        </div>
+        <div className="input-group">
+          <div className="input-control">
+            <DatePicker
+              selected={birthday}
+              onChange={(date: Date) => setBirthday(date)}
             />
           </div>
+        </div>
 
-          <div className="input-group">
-            <div className="input-label">
-              <label>Birthday</label>
-            </div>
-          </div>
-          <div className="input-group">
-            <div className="input-control">
-              <DatePicker selected={birthday} onChange={(date: Date) => setBirthday(date)} />
-            </div>
-          </div>
+        <ExternalLinksEditor
+          externalLinks={externalLinks}
+          setExternalLinks={setExternalLinks}
+        />
 
+        <div className="input-group">
+          <label>Profile Description</label>
+        </div>
+        <DescriptionEditor
+          initialDescription=""
+          onDescriptionChange={setNewDescription}
+        />
 
-          <ExternalLinksEditor externalLinks={externalLinks} setExternalLinks={setExternalLinks} /> 
+        <hr />
+        <div className="input-group">
+          <label htmlFor="email">Email</label>
+          <input
+            type="email"
+            id="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+        </div>
 
-          <div className="input-group">
-            <label>Profile Description</label>
-          </div>
-          <DescriptionEditor initialDescription='' onDescriptionChange={setNewDescription}/>
+        <div className="input-group">
+          <label htmlFor="newPassword">New Password</label>
+          <input
+            type="password"
+            id="newPassword"
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+          />
+        </div>
 
-          <hr/>
-          <div className="input-group">
-            <label htmlFor="email">Email</label>
-            <input
-              type="email"
-              id="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-          </div>
+        <hr />
+        <button type="submit" onClick={handleSaveChanges}>Save Changes</button>
 
-          <div className="input-group">
-            <label htmlFor="newPassword">New Password</label>
-            <input
-              type="password"
-              id="newPassword"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-            />
-          </div>
-          <hr/>
-          <button type="submit">Save Changes</button>
+        {/* Popup for the user's current password. */}
+        <PasswordRequestor
+          show={showPasswordModal}
+          onClose={() => setShowPasswordModal(false)}
+          onSubmit={handlePasswordSubmit}
+        />
       </div>
-      
-      <hr/>
+
+      <hr />
       <h1 className="center-text">Account Sessions</h1>
       <div className="session-token-editor-wrapper">
-        <SessionTokenEditor sessionTokens={sessionTokens} removeSessionTokens={removeExistingSessionToken}/>
+        <SessionTokenEditor
+          sessionTokens={sessionTokens}
+          removeSessionTokens={removeExistingSessionToken}
+        />
       </div>
     </>
   );
