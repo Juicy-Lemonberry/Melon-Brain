@@ -2,11 +2,14 @@
 import UAParser from 'ua-parser-js';
 import config from '@/config';
 import dynamic from 'next/dynamic';
+import { useSearchParams } from 'next/navigation';
 import React, { useEffect, useState } from 'react';
 import '@/styles/profile-editor/EditorContent.scss';
 import { getSessionToken, removeSessionToken, setSessionToken } from '@/utils/accountSessionCookie';
 import DatePicker from "react-datepicker";
 import 'react-datepicker/dist/react-datepicker.css';
+import Alert from 'react-bootstrap/Alert';
+import { transpileModule } from 'typescript';
 
 const DescriptionEditor = dynamic(() => import('@/components/userprofile/editor/DescriptionEditor'), {
   ssr: false
@@ -50,11 +53,69 @@ const ProfileEditor: React.FC = () => {
   const [sessionTokens, setSessionTokens] = useState<SessionToken[]>([]);
   const [currentPassword, setCurrentPassword] = useState<string | null>(null);
 
+  // State message at top of the page...
+  const [alertVarient, setAlertVarient] = useState<string>('danger');
+  const [alertMessage, setAlertMessage] = useState<string | null>(null);
+  // Fetch alert message from params if exists.
+  const searchParams = useSearchParams();
+  const rawAlertMessage = searchParams.get('alertMessage');
+  const rawAlertVarient = searchParams.get('alertVarient');
+  if (rawAlertMessage !== null && rawAlertVarient !== null){
+    setAlertMessage(rawAlertMessage)
+    setAlertVarient(rawAlertVarient);
+  }
+  
   // State to show/hide password request popup...
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   function handlePasswordSubmit(password: string): void {
     setCurrentPassword(currentPassword);
     setShowPasswordModal(false);
+  }
+
+  /**
+   * Handles update message received from backend api
+   * @param message The message received
+   * @returns True if message is OK, false otherwise.
+   */
+  function handleUpdateMessage(message: string): boolean {
+    let result = true;
+    switch (message) {
+      case 'BODY FIELD':
+        setAlertMessage("Error! Refresh and try again or contact admin!");
+        result = false;
+        break;
+      case 'INVALID':
+        setAlertMessage("Error! Clear cache and try again?");
+        result = false;
+        break;
+      case 'BROWSER':
+        setAlertMessage("Invalid session, please refresh page and login.");
+        removeSessionToken();
+        result = false;
+        break;
+      case 'EXPIRED':
+        setAlertMessage("Session expired, please refresh page and login.");
+        removeSessionToken();
+        result = false;
+        break;
+      case 'INVALID PASSWORD VERIFICATION':
+        setAlertMessage("Incorrect password entered for current password...");
+        result = false;
+        break;
+      case 'INVALID INPUT EMAIL':
+        setAlertMessage("Invalid new email");
+        result = false;
+        break;
+      case 'INVALID INPUT PASSWORD':
+        setAlertMessage("Invalid new password");
+        result = false;
+        break;
+    }
+
+    if (!result) {
+      setAlertVarient('danger');
+    }
+    return result;
   }
 
   // To request, and set user data on page after content is first loaded.
@@ -124,14 +185,6 @@ const ProfileEditor: React.FC = () => {
     window.location.reload();
   };
 
-
-  useEffect(() => {
-    const token = getSessionToken();
-    if (token) {
-      setUserData(token as string).catch((err) => console.error('Error fetching user data:', err));
-    }
-  }, []);
-
   async function handleSaveChanges(): Promise<void> {
     const parser = new UAParser();
     const browserName = parser.getBrowser().name;
@@ -180,11 +233,35 @@ const ProfileEditor: React.FC = () => {
     }
 
     // TODO: Handle responseData.message
+
+    // Reload the page to reflect change
+    // (Send alert message on update successful)
+    const currentUrl = window.location.href;
+    const newUrl = new URL(currentUrl);
+    newUrl.searchParams.append('alertMessage', 'Profile updated successfully!');
+    newUrl.searchParams.append('alertVarient', 'success');
+    window.history.replaceState({}, '', newUrl.toString());
     window.location.reload();
   };
 
+  useEffect(() => {
+    const token = getSessionToken();
+    if (token) {
+      setUserData(token as string).catch((err) => console.error('Error fetching user data:', err));
+    }
+
+  }, []);
+
+
   return (
     <>
+      { 
+        /* Display alert message if exists, based on the set varient... */
+        alertMessage &&
+        <Alert key={alertVarient} variant={alertVarient}>
+          alertMessage
+        </Alert>
+      }
       <h1 className="center-text">Edit Profile</h1>
       <div className="profile-editor">
         <div className="input-group">
