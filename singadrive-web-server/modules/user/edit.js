@@ -95,10 +95,11 @@ router.post("/get-data", async (req, res) => {
     );
     
     if (!accountData) {
-      accountData = await AccountsModel.create({});
+      accountData = await AccountsModel.create({
+        id: resultObj.account_id
+      });
     }    
-    console.log(accountData);
-    
+
     resultObj.description = accountData.description;
     resultObj.birthday = accountData.birthday;
     resultObj.external_links = accountData.external_links;
@@ -264,7 +265,6 @@ router.post("/update-data", async (req, res) => {
       useUnifiedTopology: true,
     });
 
-    console.log(accountInfo.external_links);
     await AccountsModel.findOneAndUpdate(
       { id: userID },
       {
