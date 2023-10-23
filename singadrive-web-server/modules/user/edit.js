@@ -90,20 +90,19 @@ router.post("/get-data", async (req, res) => {
     });
 
     // Get description, birthday and external links from MongoDB
-    const accountData = await AccountsModel.findOneAndUpdate(
-      { id: resultObj.account_id },
-      {},
-      {
-        new: true,
-        upsert: true // create a new document if not exists...
-      }
+    let accountData = await AccountsModel.findOne(
+      { id: resultObj.account_id }
     );
+    
+    if (!accountData) {
+      accountData = await AccountsModel.create({});
+    }    
+    console.log(accountData);
     
     resultObj.description = accountData.description;
     resultObj.birthday = accountData.birthday;
     resultObj.external_links = accountData.external_links;
     
-
     res.status(200).json(resultObj); 
   } catch (error) {
     console.error('Error executing query', error);
@@ -186,8 +185,9 @@ async function _handleAccountInfoUpdate(req, res, client, accountInfo) {
   const updateQuery = 'SELECT * FROM "user".update_account_details($1, $2, $3);';
   const updateResult = await client.query(updateQuery, [req.body.session_token, req.body.browser_info, accountInfo.display_name]);
   
+  let resultObj = {};
   if (updateResult.rows.length > 0) {
-    let resultObj = updateResult.rows[0];
+    resultObj = updateResult.rows[0];
     if (resultObj.message !== 'OK') {
       return { status: 400, message: resultObj.message };
     }
@@ -257,7 +257,14 @@ router.post("/update-data", async (req, res) => {
 
       userID = resultObj.account_id;
     }
+    client.release();
 
+    await mongoose.connect(mongoConfig.url, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
+
+    console.log(accountInfo.external_links);
     await AccountsModel.findOneAndUpdate(
       { id: userID },
       {
@@ -291,7 +298,6 @@ router.post("/update-data", async (req, res) => {
     console.error('Error executing query', error);
     res.status(500).send('Internal Server Error');
   } finally {
-    client.release();
     mongoose.connection.close();
   }
 });

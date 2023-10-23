@@ -47,28 +47,31 @@ const ProfileEditor: React.FC = () => {
   const [displayName, setDisplayName] = useState('');
   const [birthday, setBirthday] = useState<Date | null>(null);
   const [externalLinks, setExternalLinks] = useState<ExternalLink[]>([]);
-  const [email, setEmail] = useState('');
-  const [newPassword, setNewPassword] = useState('');
   const [description, setNewDescription] = useState<string>('');
-  const [sessionTokens, setSessionTokens] = useState<SessionToken[]>([]);
-  const [currentPassword, setCurrentPassword] = useState<string | null>(null);
 
-  // State message at top of the page...
-  const [alertVarient, setAlertVarient] = useState<string>('danger');
-  const [alertMessage, setAlertMessage] = useState<string | null>(null);
+  const [email, setEmail] = useState('');
+  const [originalEmail, setOriginalEmail] = useState('');
+
+  const [newPassword, setNewPassword] = useState('');
+  const [sessionTokens, setSessionTokens] = useState<SessionToken[]>([]);
+
+
   // Fetch alert message from params if exists.
   const searchParams = useSearchParams();
   const rawAlertMessage = searchParams.get('alertMessage');
   const rawAlertVarient = searchParams.get('alertVarient');
-  if (rawAlertMessage !== null && rawAlertVarient !== null){
-    setAlertMessage(rawAlertMessage)
-    setAlertVarient(rawAlertVarient);
-  }
+    
+  // Used to state message at top of the page...
+  const [alertVarient, setAlertVarient] = useState<string>(rawAlertVarient ?? 'danger');
+  const [alertMessage, setAlertMessage] = useState<string | null>(rawAlertMessage);
   
   // State to show/hide password request popup...
+  const [passwordSubmitCallback, setPasswordSubmitCallback] = useState<((password: string) => void) | null>(null);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   function handlePasswordSubmit(password: string): void {
-    setCurrentPassword(currentPassword);
+    if (passwordSubmitCallback != null) {
+      passwordSubmitCallback(password);
+    } 
     setShowPasswordModal(false);
   }
 
@@ -144,6 +147,8 @@ const ProfileEditor: React.FC = () => {
       console.error('Failed to fetch user data: ', data);
       return;
     }
+
+    console.log(data);
     
     switch (data.message) {
       case "INVALID":
@@ -164,6 +169,7 @@ const ProfileEditor: React.FC = () => {
     setBirthday(data.birthday ? new Date(data.birthday) : null);
     setExternalLinks(data.external_links ?? []);
     setEmail(data.email ?? 'N/A');
+    setOriginalEmail(data.email ?? 'N/A');
     setNewDescription(data.description ?? '');
     // Set session token if exists...
     if (data.session_tokens) {
@@ -185,6 +191,18 @@ const ProfileEditor: React.FC = () => {
     window.location.reload();
   };
 
+  function waitForPasswordInput() {
+    return new Promise((resolve) => {
+      setShowPasswordModal(true);
+      const onPasswordSubmitted = (password: string) => {
+        resolve(password); // Resolve the promise with the entered password.
+      };
+  
+      // Set the callback for password submission.
+      setPasswordSubmitCallback(onPasswordSubmitted);
+    });
+  }
+
   async function handleSaveChanges(): Promise<void> {
     const parser = new UAParser();
     const browserName = parser.getBrowser().name;
@@ -200,12 +218,12 @@ const ProfileEditor: React.FC = () => {
 
     // Changing sensitive information (password/email),
     // require additional verification through current password...
-    const changeSensitiveInformation = isNullOrWhitespace(email) || isNullOrWhitespace(newPassword);
+    const changeSensitiveInformation = (email.trim() != originalEmail) || !isNullOrWhitespace(newPassword);
     if (changeSensitiveInformation) {
-      setShowPasswordModal(true);
+      const currentPassword = await waitForPasswordInput();
       jsonData["verification_password"] = currentPassword;
 
-      if (!isNullOrWhitespace(email)) {
+      if (email.trim() != originalEmail) {
         jsonData["email"] = email;
       }
       if (!isNullOrWhitespace(newPassword)) {
@@ -306,7 +324,7 @@ const ProfileEditor: React.FC = () => {
           <label>Profile Description</label>
         </div>
         <DescriptionEditor
-          initialDescription=""
+          initialDescription={description}
           onDescriptionChange={setNewDescription}
         />
 
