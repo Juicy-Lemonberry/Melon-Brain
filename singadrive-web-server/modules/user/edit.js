@@ -63,16 +63,16 @@ router.post("/get-data", async (req, res) => {
       resultObj = result.rows[0];
       
       if (resultObj.message === 'INVALID') {
-        res.status(400).send('INVALID');
+        res.status(400).json({ message: 'INVALID' });
         client.release();
         return;
       } else if (resultObj.message === 'BROWSER') {
-        res.status(500).send('ERROR');
+        res.status(500).json({ message: 'ERROR' });
         client.release();
         console.log("One of the user's account was attempted to be logged in by session token, but browser mismatch!")
         return;
       } else if (resultObj.message === 'EXPIRED') {
-        res.status(400).send('EXPIRED');
+        res.status(400).json({ message: 'EXPIRED' });
         client.release();
         return;
       }
@@ -107,14 +107,13 @@ router.post("/get-data", async (req, res) => {
     res.status(200).json(resultObj); 
   } catch (error) {
     console.error('Error executing query', error);
-    res.status(500).send('Internal Server Error');
+    res.status(500).json({ message: 'Internal Server Error' });
   } finally {
     mongoose.connection.close();
   }
 });
 
 //#region Update Data Utils
-
 
 async function _verifyAndUpdateCredentials(client, sessionToken, browserInfo, accountInfo) {
   const updateCredentialsQuery = 'SELECT * FROM "user"."update_account_credentials"($1, $2, $3, $4)';
@@ -146,9 +145,11 @@ async function _handleSensitiveInfoUpdate(req, res, client, accountInfo) {
 
   let resultObj = {};
   if (hashedPasswordResult.rows.length > 0) {
-    let resultObj = hashedPasswordResult.rows[0];
-    if (resultObj.message !== 'OK') {
-      return { status: 400, message: resultObj.message };
+    resultObj = hashedPasswordResult.rows[0];
+    if (resultObj.message === 'NOT FOUND') {
+      return { status: 400, message: "USER NOT FOUND" };
+    } else if (resultObj.hashed_password === null) {
+      return { status: 500, message: "ERROR" };
     }
   }
 
@@ -176,6 +177,7 @@ async function _handleSensitiveInfoUpdate(req, res, client, accountInfo) {
     if (!_isValidPassword(inputPassword)) {
       return { status: 400, message: "INVALID INPUT PASSWORD" };
     }
+
     accountInfo.hashed_password = await bcrypt.hash(inputPassword, 10);
   }
 
@@ -242,16 +244,16 @@ router.post("/update-data", async (req, res) => {
       let resultObj = result.rows[0];
       
       if (resultObj.message === 'INVALID') {
-        res.status(400).send('INVALID');
+        res.status(400).json({ message: 'INVALID' });
         client.release();
         return;
       } else if (resultObj.message === 'BROWSER') {
-        res.status(500).send('ERROR');
+        res.status(500).json({ message: 'ERROR' });
         client.release();
         console.log("One of the user's account was attempted to be logged in by session token, but browser mismatch!")
         return;
       } else if (resultObj.message === 'EXPIRED') {
-        res.status(400).send('EXPIRED');
+        res.status(400).json({ message: 'EXPIRED' });
         client.release();
         return;
       }
@@ -296,7 +298,7 @@ router.post("/update-data", async (req, res) => {
     res.status(200).json({ message: "OK" });
   } catch (error) {
     console.error('Error executing query', error);
-    res.status(500).send('Internal Server Error');
+    res.status(500).json({ message: 'Internal Server Error' });
   } finally {
     mongoose.connection.close();
   }
