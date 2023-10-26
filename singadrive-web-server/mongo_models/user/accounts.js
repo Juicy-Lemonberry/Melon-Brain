@@ -1,5 +1,10 @@
 const mongoose = require('mongoose');
 
+const externalLinkSchema = new mongoose.Schema({
+  title: String,
+  url: String,
+});
+
 const accountsSchema = new mongoose.Schema({
   id: {
     type: Number,
@@ -18,9 +23,8 @@ const accountsSchema = new mongoose.Schema({
     default: null
   },
   external_links: {
-    type: Map,
-    of: String,
-    default: {}
+    type: [externalLinkSchema],
+    default: []
   }
 });
 

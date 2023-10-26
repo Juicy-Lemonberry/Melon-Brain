@@ -130,7 +130,7 @@ router.post('/login', async (req, res) => {
                 res.status(400).send('USERNAME');
                 client.release();
                 return;
-            } else if (resultObj.message === 'ERROR') {
+            } else if (resultObj.hashed_password === null) {
                 res.status(500).send('ERROR');
                 client.release();
                 return;

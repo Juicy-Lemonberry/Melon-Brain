@@ -7,14 +7,23 @@ const logsSchema = new mongoose.Schema({
   },
   description: {
     type: String,
-    maxlength: [512, 'Description cannot exceed 5000 characters'],
+    maxlength: [512, 'Description cannot exceed 512 characters'],
+    required: true
+  },
+  browser_info: {
+    type: String,
+    maxlength: [128, 'Browser Information cannot exceed 128 characters'],
     required: true
   },
   datetime: {
     type: Date,
-    required: true
+    required: true,
+    default: () => {
+      return new Date().toLocaleString("en-US", {timeZone: "Asia/Singapore"});
+    }
   },
 });
+
 
 const LogModel = mongoose.model('accounts-logs', logsSchema);
 module.exports = LogModel;
