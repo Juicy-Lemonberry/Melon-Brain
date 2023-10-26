@@ -64,16 +64,9 @@ const ProfileEditor: React.FC = () => {
   // Used to state message at top of the page...
   const [alertVarient, setAlertVarient] = useState<string>(rawAlertVarient ?? 'danger');
   const [alertMessage, setAlertMessage] = useState<string | null>(rawAlertMessage);
-  
-  // State to show/hide password request popup...
-  const [passwordSubmitCallback, setPasswordSubmitCallback] = useState<((password: string) => void) | null>(null);
+
+  // To handle popup to show/hide asking user for their current password...
   const [showPasswordModal, setShowPasswordModal] = useState(false);
-  function handlePasswordSubmit(password: string): void {
-    if (passwordSubmitCallback != null) {
-      passwordSubmitCallback(password);
-    } 
-    setShowPasswordModal(false);
-  }
 
   /**
    * Handles update message received from backend api
@@ -191,19 +184,31 @@ const ProfileEditor: React.FC = () => {
     window.location.reload();
   };
 
-  function waitForPasswordInput() {
-    return new Promise((resolve) => {
-      setShowPasswordModal(true);
-      const onPasswordSubmitted = (password: string) => {
-        resolve(password); // Resolve the promise with the entered password.
-      };
-  
-      // Set the callback for password submission.
-      setPasswordSubmitCallback(onPasswordSubmitted);
-    });
+//#region Save Changes Interactions
+
+  async function handleSavedChangesResponse(responseRequest: Promise<Response>){
+    const response = await responseRequest;
+    const responseData = await response.json();
+    
+    if (!response.ok) {
+      console.error('Failed to update user data: ', responseData);
+      // TODO: Show user error based on response message/code.
+      return;
+    }
+
+    handleUpdateMessage(responseData.message);
+
+    // Reload the page to reflect change
+    // (Send alert message on update successful)
+    const currentUrl = window.location.href;
+    const newUrl = new URL(currentUrl);
+    newUrl.searchParams.append('alertMessage', 'Profile updated successfully!');
+    newUrl.searchParams.append('alertVarient', 'success');
+    window.history.replaceState({}, '', newUrl.toString());
+    window.location.reload();
   }
 
-  async function handleSaveChanges(): Promise<void> {
+  function getSavedJsonData() {
     const parser = new UAParser();
     const browserName = parser.getBrowser().name;
 
@@ -216,21 +221,10 @@ const ProfileEditor: React.FC = () => {
       "username": username
     };
 
-    // Changing sensitive information (password/email),
-    // require additional verification through current password...
-    const changeSensitiveInformation = (email.trim() != originalEmail) || !isNullOrWhitespace(newPassword);
-    if (changeSensitiveInformation) {
-      const currentPassword = await waitForPasswordInput();
-      jsonData["verification_password"] = currentPassword;
+    return jsonData;
+  }
 
-      if (email.trim() != originalEmail) {
-        jsonData["email"] = email;
-      }
-      if (!isNullOrWhitespace(newPassword)) {
-        jsonData["password"] = newPassword;
-      }
-    }
-
+  function sendNewChangesAPI(jsonData: { [key: string]: any } ) : Promise<Response> {
     jsonData["session_token"] = getSessionToken();
 
     const options = {
@@ -241,26 +235,47 @@ const ProfileEditor: React.FC = () => {
       body: JSON.stringify(jsonData)
     };
     const apiRoute = config.API_BASE_URL + '/api/users-edit/update-data';
-    const response = await fetch(apiRoute, options);
-    const responseData = await response.json();
+    return fetch(apiRoute, options);
+  }
+
+  function handleSaveSensitiveChanges(currentPassword: String) {
+    console.log("Handle save sensitive change!");
+    const jsonData: { [key: string]: any } = getSavedJsonData();
+    jsonData["verification_password"] = currentPassword;
+
+    if (email.trim() != originalEmail) {
+      jsonData["email"] = email;
+    }
     
-    if (!response.ok) {
-      console.error('Failed to update user data: ', responseData);
-      // TODO: Show user error based on response message/code.
+    if (!isNullOrWhitespace(newPassword)) {
+      jsonData["password"] = newPassword;
+    }
+
+    console.log("Saving Sensitive!");
+    const responseRequest = sendNewChangesAPI(jsonData);
+    handleSavedChangesResponse(responseRequest);
+  }
+
+  function handleSaveChanges() {
+    const jsonData: { [key: string]: any } = getSavedJsonData();
+
+    // Changing sensitive information (password/email),
+    // require additional verification through current password...
+    const changeSensitiveInformation = (email.trim() != originalEmail) || !isNullOrWhitespace(newPassword);
+    if (changeSensitiveInformation) {
+      console.log("Sensitive Information!");
+      // NOTE: Will popup a form asking user for their current password
+      // on entered, will callback to 'handleSaveSensitiveChanges' function...
+      setShowPasswordModal(true);
       return;
     }
 
-    // TODO: Handle responseData.message
-
-    // Reload the page to reflect change
-    // (Send alert message on update successful)
-    const currentUrl = window.location.href;
-    const newUrl = new URL(currentUrl);
-    newUrl.searchParams.append('alertMessage', 'Profile updated successfully!');
-    newUrl.searchParams.append('alertVarient', 'success');
-    window.history.replaceState({}, '', newUrl.toString());
-    window.location.reload();
+    console.log("Saving non-sensitive!");
+    const responseRequest = sendNewChangesAPI(jsonData);
+    handleSavedChangesResponse(responseRequest);
   };
+
+//#endregion
 
   useEffect(() => {
     const token = getSessionToken();
@@ -356,7 +371,11 @@ const ProfileEditor: React.FC = () => {
         <PasswordRequestor
           show={showPasswordModal}
           onClose={() => setShowPasswordModal(false)}
-          onSubmit={handlePasswordSubmit}
+          onSubmit={(submitPassword) => {
+              handleSaveSensitiveChanges(submitPassword);
+              setShowPasswordModal(false);
+            }
+          }
         />
       </div>
 
