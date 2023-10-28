@@ -86,7 +86,7 @@ const TopNavbar: React.FC = () => {
               <div className="custom-dropdown-toggle">
                 { /* TODO: Replace with actual user profile picture if has one*/ }
                 <RandomAvatar name={user['username']} size={30}/>
-                <span className="ms-2 align-middle">{user['username']}</span>
+                <span className="ms-2 align-middle">{user['display_name']}</span>
               </div>
             } id="nav-dropdown" className="custom-nav-dropdown">
               <NavDropdown.Item href={`/profile?username=${user['username']}`}>View Profile</NavDropdown.Item>
