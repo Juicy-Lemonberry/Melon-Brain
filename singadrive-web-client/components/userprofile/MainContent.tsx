@@ -1,15 +1,29 @@
 'use client'
 import React from 'react';
 import { useSearchParams } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import { useEffect, useState } from 'react';
 import { Container, Row, Col, Card } from 'react-bootstrap';
 import { RandomAvatar } from 'react-random-avatars';
 import config from '@/config';
+import ExternalLinksPreview from './ExternalLinksPreview';
+
+const DescriptionEditor = dynamic(() => import('@/components/userprofile/DescriptionPreview'), {
+  ssr: false
+});
+
+interface ExternalLink {
+  title: string;
+  url: string;
+}
 
 interface UserProfile {
   username: string;
+  dislayName: string;
   email: string;
   description: string;
+  externalLinks: ExternalLink[];
+  birthday: string;
   // Add more fields as needed
 }
 
@@ -38,11 +52,15 @@ const ProfilePage = () => {
           console.log(data);
           if (data.message === 'SUCCESS') {
             setUserProfile(data.data);
+            console.log(userProfile?.birthday);
           } else if (data.message === 'NOT FOUND') {
             setUserProfile({
               username: 'NOT FOUND',
               email: '',
-              description: 'This user does not exist!'
+              description: 'This user does not exist!',
+              dislayName: '',
+              externalLinks: [],
+              birthday: ''
             });
           }
 
@@ -52,7 +70,10 @@ const ProfilePage = () => {
           setUserProfile({
               username: 'ERROR',
               email: '',
-              description: 'Error fetching user profile, try again or contact admin!'
+              description: 'Error fetching user profile, try again or contact admin!',
+              dislayName: '',
+              externalLinks: [],
+              birthday: ''
             });
         });
     } else {
@@ -60,7 +81,10 @@ const ProfilePage = () => {
       setUserProfile({
         username: 'NOT FOUND',
         email: '',
-        description: 'This user does not exist!'
+        description: 'This user does not exist!',
+        dislayName: '',
+        externalLinks: [],
+        birthday: ''
       });
     }
   }, [username]);
@@ -70,15 +94,15 @@ const ProfilePage = () => {
       <Row className='justify-content-center'>
         <Col md={6}>
           <Card>
-            <Card.Header>User Profile</Card.Header>
+            <Card.Header>{userProfile?.dislayName ?? "NOT FOUND"}</Card.Header>
             <Card.Body>
               {userProfile ? (
                 <>
                   <RandomAvatar name={username} size={30}/>
-                  <Card.Title>{userProfile.username}</Card.Title>
-                  <Card.Text>Email: {userProfile.email}</Card.Text>
-                  <Card.Text>Description: {userProfile.description}</Card.Text>
-                  {/* Add more user details here */}
+                  <Card.Title>{userProfile.username} ({userProfile.email})</Card.Title>
+                  <Card.Text>Birthday: {userProfile.birthday}</Card.Text>
+                  <DescriptionEditor initialDescription={userProfile.description}/>
+                  <ExternalLinksPreview links={userProfile.externalLinks}/>
                 </>
               ) : (
                 'Loading...'
