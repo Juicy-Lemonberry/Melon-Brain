@@ -1,9 +1,11 @@
 'use client'
-import React, { useEffect, useState } from 'react';
-import Link from 'next/link';
-import { getSessionToken, removeSessionToken } from '@/utils/accountSessionCookie';
 import UAParser from 'ua-parser-js';
 import config from '@/config';
+import { getSessionToken, removeSessionToken } from '@/utils/accountSessionCookie';
+import { Navbar, Nav, NavDropdown } from 'react-bootstrap';
+import { RandomAvatar } from 'react-random-avatars';
+import React, { useEffect, useState } from 'react';
+import '@/styles/TopNavbar.scss';
 
 const TopNavbar: React.FC = () => {
   const [user, setUser] = useState(null);
@@ -70,46 +72,39 @@ const TopNavbar: React.FC = () => {
   }, []);
 
   return (
-    <nav className="navbar navbar-expand-lg navbar-dark bg-dark">
-      <div className="container">
-        <Link className="navbar-brand" href="/">SingaDrive</Link>
-        <button className="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-          <span className="navbar-toggler-icon"></span>
-        </button>
-        <div className="collapse navbar-collapse" id="navbarSupportedContent">
-          {/* Home and About to the left side */}
-          <ul className="navbar-nav">
-            <li className="nav-item"><Link className="nav-link" href="/">Home</Link></li>
-            <li className="nav-item"><Link className="nav-link" href="/about">About</Link></li>
-          </ul>
-
-          { /* User Account panel at right side */ }
-          <ul className="navbar-nav ms-auto">
-            {user ? (
-              // If user exists, show user information
-              <>
-                <li className="nav-item">
-                  <span className="navbar-text mx-2">{user["username"]}</span>
-                </li>
-                <li className="nav-item">
-                  <button onClick={handleLogout} className="btn btn-danger">Logout</button>
-                </li>
-              </>
-            ) : (
-              // If no user, show Login and Signup buttons
-              <>
-                <li className="nav-item">
-                  <Link href="/login"><a className="btn btn-primary mx-2">Login</a></Link>
-                </li>
-                <li className="nav-item">
-                  <Link href="/register"><a className="btn btn-success">Signup</a></Link>
-                </li>
-              </>
-            )}
-          </ul>
-        </div>
-      </div>
-    </nav>
+    <Navbar bg="dark" variant="dark" expand="lg">
+      <Navbar.Brand className="ms-3" href="/">SingaDrive</Navbar.Brand>
+      <Navbar.Toggle aria-controls="basic-navbar-nav" />
+      <Navbar.Collapse id="basic-navbar-nav">
+        <Nav className="mr-auto">
+          <Nav.Link href="/">Home</Nav.Link>
+          <Nav.Link href="/about">About</Nav.Link>
+        </Nav>
+        <Nav className="ms-auto me-5">
+          {user ? (
+            <NavDropdown title={
+              <div className="custom-dropdown-toggle">
+                { /* TODO: Replace with actual user profile picture if has one*/ }
+                <RandomAvatar name={user['username']} size={30}/>
+                <span className="ms-2 align-middle">{user['display_name']}</span>
+              </div>
+            } id="nav-dropdown" className="custom-nav-dropdown">
+              <NavDropdown.Item href={`/profile?username=${user['username']}`}>View Profile</NavDropdown.Item>
+              <NavDropdown.Item href="/rentals">View Rentals</NavDropdown.Item>
+              <NavDropdown.Divider />
+              <NavDropdown.Item href="/profile/edit">Edit Profile</NavDropdown.Item>
+              <NavDropdown.Divider />
+              <NavDropdown.Item onClick={handleLogout}>Logout</NavDropdown.Item>
+            </NavDropdown>
+          ) : (
+            <>
+              <Nav.Link href="/login">Login</Nav.Link>
+              <Nav.Link href="/register">Register</Nav.Link>
+            </>
+          )}
+        </Nav>
+      </Navbar.Collapse>
+    </Navbar>
   );
 };
 

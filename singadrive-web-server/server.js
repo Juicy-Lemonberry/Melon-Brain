@@ -7,13 +7,20 @@ app.use(bodyParser.json());
 app.use(cors());
 
 const exampleRoutes = require('./modules/example');
-const usersRoutes = require('./modules/users');
 const rentMapRoutes = require('./modules/rentMap');
+
+const usersRoutes = require('./modules/user/users');
+const usersPublicDataRoutes = require('./modules/user/public');
+const usersProfileEditRoutes = require('./modules/user/edit');
 
 // URL calls to '/api/example/...' will be passed to `modules/example.js'.
 app.use("/api/example", exampleRoutes);
 
+// NOTE: User related routes...
+app.use("/api/public-users", usersPublicDataRoutes);
 app.use("/api/users", usersRoutes);
+app.use("/api/users-edit", usersProfileEditRoutes);
+
 app.use("/api/rent-map", rentMapRoutes);
 
 // TODO: Remove this once not under use....

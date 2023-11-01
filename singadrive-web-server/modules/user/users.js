@@ -41,6 +41,7 @@ function _isValidEmail(email) {
     // TODO: Check if email actually exists in SMTP server.
 }
 
+
 router.post('/register', async (req, res) => {
     const email = req.body.email;
     const password = req.body.password;
@@ -129,7 +130,7 @@ router.post('/login', async (req, res) => {
                 res.status(400).send('USERNAME');
                 client.release();
                 return;
-            } else if (resultObj.message === 'ERROR') {
+            } else if (resultObj.hashed_password === null) {
                 res.status(500).send('ERROR');
                 client.release();
                 return;
@@ -223,5 +224,6 @@ router.delete('/session', async (req, res) => {
     res.status(500).send('Internal Server Error');
   }
 });
+
 
 module.exports = router;
