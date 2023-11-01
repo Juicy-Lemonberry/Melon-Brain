@@ -215,7 +215,12 @@ router.post("/update-data", async (req, res) => {
     let sensitiveInformationChanged = false;
     accountInfo.display_name = req.body.display_name ?? '';
     accountInfo.description = req.body.description ?? '';
+    accountInfo.birthday = req.body.birthday ?? null;
+    // Remoe all empty/nulls fields from external links...
     accountInfo.external_links = req.body.external_links ?? [];
+    accountInfo.external_links = accountInfo.external_links.filter((link) => {
+      return link.title && link.url && link.title.trim() !== '' && link.url.trim() !== '';
+    });
     accountInfo.birthday = req.body.birthday ?? null;
 
     let result = {};
