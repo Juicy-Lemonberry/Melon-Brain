@@ -44,7 +44,7 @@ router.get('/profile', async (req, res) => {
     });
 
     let accountData = await AccountsModel.findOne(
-      { id: resultObj.account_id }
+      { id: resultData.id }
     );
     resultData.birthday = accountData.birthday;
     resultData.description = accountData.description;
