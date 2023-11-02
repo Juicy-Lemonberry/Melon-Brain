@@ -309,4 +309,39 @@ router.post("/update-data", async (req, res) => {
   }
 });
 
+router.post("/delete-token", async (req, res) => {
+  const sessionToken = req.body.session_token;
+  const browserInfo = req.body.browser_info;
+  // NOTE: Deletes by the session token's ID.
+  const deleteTarget = req.body.delete_token;
+
+  try {
+    const client = await postgresPool.connect();
+    const updateQuery = 'SELECT * FROM "user".delete_session_token($1, $2, $3);';
+    const updateResult = await client.query(updateQuery, [sessionToken, browserInfo, deleteTarget]);
+    
+    let returnMessage = "INVALID";
+    let returnStatus = 400;
+    if (updateResult.rows.length > 0) {
+      const resultObj = updateResult.rows[0];
+      switch (resultObj.message) {
+        case "BROWSER":
+          console.log(`Illegal session token usage on ${sessionToken} onto deleting ${deleteTarget}...`)
+          break;
+        case "SUCCESS":
+          returnMessage = "SUCCESS";
+          returnStatus = 200;
+          break;
+      }
+    }
+    client.close();
+
+    // TODO: Log action on MongoDB
+    res.status(returnStatus).json({message: returnMessage});
+  } catch (error) {
+    console.error('Error executing delete-token.', error);
+    res.status(500).json({ message: 'Internal Server Error '});
+  }
+});
+
 module.exports = router;
