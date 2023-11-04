@@ -1,0 +1,37 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Docker Compose Web Server",
+            "type": "shell",
+            "command": "docker compose --file docker-compose-windows.yml --env-file .env up --build",
+            "group": "build",
+            "presentation": {
+                "panel": "new"
+            }
+        },
+        {
+            "label": "Build Run Web Client",
+            "type": "shell",
+            "command": "npm run build && npm run start",
+            "options": {
+                "cwd": "${workspaceFolder}/singadrive-web-client"
+            },
+            "group": "build",
+            "dependsOn": "Docker Compose Up",
+            "presentation": {
+                "panel": "new"
+            }
+        }
+    ],
+    "compounds": [
+        {
+            "name": "Start Web Server and Client",
+            "tasks": ["Docker Compose Web Server", "Web Client NPM"],
+            "presentation": {
+                "panel": "shared",
+                "clear": true
+            }
+        }
+    ]
+}

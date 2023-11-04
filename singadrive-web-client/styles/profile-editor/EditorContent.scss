@@ -44,6 +44,9 @@
 
 .session-token-editor-wrapper {
   display: flex;
-  justify-content: center;
-  align-items: center;
+  flex-direction: column;
+  align-items: center; // This will keep the cards centered horizontally
+
+  // If you want to add some space around the entire group of cards, you can add some padding:
+  padding: 1rem 0; 
 }
