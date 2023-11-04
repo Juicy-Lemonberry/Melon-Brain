@@ -309,38 +309,85 @@ router.post("/update-data", async (req, res) => {
   }
 });
 
-router.post("/delete-token", async (req, res) => {
-  const sessionToken = req.body.session_token;
-  const browserInfo = req.body.browser_info;
-  // NOTE: Deletes by the session token's ID.
-  const deleteTarget = req.body.delete_token;
-
+//#region Delete Session Token Utils
+async function _deleteSessionToken(sessionToken, browserInfo, deleteTarget) {
+  const client = await postgresPool.connect();
   try {
-    const client = await postgresPool.connect();
     const updateQuery = 'SELECT * FROM "user".delete_session_token($1, $2, $3);';
     const updateResult = await client.query(updateQuery, [sessionToken, browserInfo, deleteTarget]);
+    let result = { message: "INVALID", status: 400 };
     
-    let returnMessage = "INVALID";
-    let returnStatus = 400;
     if (updateResult.rows.length > 0) {
       const resultObj = updateResult.rows[0];
-      switch (resultObj.message) {
-        case "BROWSER":
-          console.log(`Illegal session token usage on ${sessionToken} onto deleting ${deleteTarget}...`)
-          break;
-        case "SUCCESS":
-          returnMessage = "SUCCESS";
-          returnStatus = 200;
-          break;
+      if (resultObj.message === "SUCCESS") {
+        result.message = "SUCCESS";
+        result.status = 200;
+      } else if (resultObj.message === "BROWSER") {
+        console.log(`Illegal session token usage on ${sessionToken} onto deleting ${deleteTarget}...`);
       }
     }
-    client.close();
+    return result;
+  } finally {
+    client.release();
+  }
+}
 
-    // TODO: Log action on MongoDB
-    res.status(returnStatus).json({message: returnMessage});
+async function _logDeletion(mongoConfig, LogsModel, userID, browserInfo) {
+  await mongoose.connect(mongoConfig.url, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  });
+  
+  try {
+    await LogsModel.create({
+      id: userID,
+      description: `Deleted session token related to ${browserInfo}`,
+      browser_info: browserInfo
+    });
+  } finally {
+    mongoose.connection.close();
+  }
+}
+
+async function _getUserID(username) {
+  const client = await postgresPool.connect();
+  try {
+    const query = 'SELECT id FROM "user"."public_accounts_info" WHERE username = $1';
+    const { rows } = await client.query(query, [username]);
+    if (rows.length > 0) {
+      return rows[0].id; // Assuming 'id' is the column name for the user ID
+    }
+    return null; // Return null if the user is not found
+  } finally {
+    client.release();
+  }
+}
+//#endregion
+
+router.post("/delete-token", async (req, res) => {
+  const {
+    username: username,
+    session_token: sessionToken,
+    browser_info: browserInfo,
+    delete_token: deleteTarget
+  } = req.body;
+
+  try {
+    const deletionResult = await _deleteSessionToken(sessionToken, browserInfo, deleteTarget);
+    if (deletionResult.status === 200) {
+      const userID = _getUserID(username);
+
+      if (userID == null){
+        console.log(`Failed to log the deletion of a session token related to user ${userID}!`)
+      } else {
+        await _logDeletion(mongoConfig, LogsModel, userID, browserInfo);
+      }
+    }
+
+    res.status(deletionResult.status).json({ message: deletionResult.message });
   } catch (error) {
     console.error('Error executing delete-token.', error);
-    res.status(500).json({ message: 'Internal Server Error '});
+    res.status(500).json({ message: 'Internal Server Error' });
   }
 });
 

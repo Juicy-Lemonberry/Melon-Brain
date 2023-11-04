@@ -183,7 +183,8 @@ const ProfileEditor: React.FC = () => {
     const jsonData = {
       "browser_info": browserName,
       "session_token": getSessionToken(),
-      "delete_token": targetToken
+      "delete_token": targetToken,
+      "username": username
     };
 
     const options = {
