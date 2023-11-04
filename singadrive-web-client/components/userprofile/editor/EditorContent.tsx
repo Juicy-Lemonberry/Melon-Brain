@@ -28,6 +28,7 @@ interface SessionToken {
   browserInfo: string;
   lastUsedDate: Date;
   firstLoginDate: Date;
+  sessionToken: string
 }
 
 const SessionTokenEditor = dynamic(() => import('@/components/userprofile/editor/SessionTokenEditor'), {
@@ -141,8 +142,6 @@ const ProfileEditor: React.FC = () => {
       return;
     }
 
-    console.log(data);
-    
     switch (data.message) {
       case "INVALID":
         setUsername("Error loading data...");
@@ -165,24 +164,50 @@ const ProfileEditor: React.FC = () => {
     setOriginalEmail(data.email ?? 'N/A');
     setNewDescription(data.description ?? '');
     // Set session token if exists...
+  
     if (data.session_tokens) {
       const transformedSessionTokens = data.session_tokens.map((token: any) => ({
         browserInfo: token.browser_info,
         lastUsedDate: new Date(token.last_used),
-        firstLoginDate: new Date(token.created_at)
+        firstLoginDate: new Date(token.created_at),
+        sessionToken: token.session_token
       }));
       setSessionTokens(transformedSessionTokens);
     }
   }
 
-  const removeExistingSessionToken = (index: number) => {
-    // Remove the session token at the given index
-    const newSessionTokens = [...sessionTokens];
-    newSessionTokens.splice(index, 1);
-    setSessionTokens(newSessionTokens);
-    // TODO: Request to backend remove token...
+  async function requestRemoveSessionToken(targetToken: string): Promise<void> {
+    const parser = new UAParser();
+    const browserName = parser.getBrowser().name;
+
+    const jsonData = {
+      "browser_info": browserName,
+      "session_token": getSessionToken(),
+      "delete_token": targetToken
+    };
+
+    const options = {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(jsonData)
+    };
+
+    const apiRoute = config.API_BASE_URL + '/api/users-edit/delete-token';
+    const response = await fetch(apiRoute, options);
+    const data = await response.json();
+
+    if (!response.ok) {
+      console.error('Failed to fetch user data: ', data);
+      return;
+    }
+  }
+
+  async function removeExistingSessionToken(deleteToken: string) {
+    await requestRemoveSessionToken(deleteToken);
     window.location.reload();
-  };
+  }
 
 //#region Save Changes Interactions
 
@@ -239,7 +264,6 @@ const ProfileEditor: React.FC = () => {
   }
 
   function handleSaveSensitiveChanges(currentPassword: String) {
-    console.log("Handle save sensitive change!");
     const jsonData: { [key: string]: any } = getSavedJsonData();
     jsonData["verification_password"] = currentPassword;
 
@@ -251,7 +275,6 @@ const ProfileEditor: React.FC = () => {
       jsonData["password"] = newPassword;
     }
 
-    console.log("Saving Sensitive!");
     const responseRequest = sendNewChangesAPI(jsonData);
     handleSavedChangesResponse(responseRequest);
   }
@@ -263,17 +286,15 @@ const ProfileEditor: React.FC = () => {
     // require additional verification through current password...
     const changeSensitiveInformation = (email.trim() != originalEmail) || !isNullOrWhitespace(newPassword);
     if (changeSensitiveInformation) {
-      console.log("Sensitive Information!");
       // NOTE: Will popup a form asking user for their current password
       // on entered, will callback to 'handleSaveSensitiveChanges' function...
       setShowPasswordModal(true);
       return;
     }
 
-    console.log("Saving non-sensitive!");
     const responseRequest = sendNewChangesAPI(jsonData);
     handleSavedChangesResponse(responseRequest);
-  };
+  }
 
 //#endregion
 
