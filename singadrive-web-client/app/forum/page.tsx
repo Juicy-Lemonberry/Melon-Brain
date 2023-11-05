@@ -30,6 +30,12 @@ function ForumPage() {
                 title="Issues"
                 description="Post any issues or bugs you have encountered here!"
                 url="issues"/>
+            
+            <hr></hr>
+            <CategoryCard 
+                title="Random" 
+                description="All topics welcome!"
+                url="random"/>
         </Container>
     </>
   );

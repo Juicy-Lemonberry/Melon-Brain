@@ -18,7 +18,7 @@ const CategoryCard: FC<CategoryCardProps> = ({title, description, url}) => {
           <Card.Text>
               {description}
           </Card.Text>
-          <Button variant="primary" href={"/forum/" + url}>Enter</Button>
+          <Button variant="primary" href={"/forum/category?c=" + url}>Enter</Button>
           </Card.Body>
       </Card>
       </Col>
