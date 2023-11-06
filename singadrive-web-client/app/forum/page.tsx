@@ -18,24 +18,24 @@ function ForumPage() {
             <CategoryCard 
                 title="Annoucements" 
                 description="Public annoucements to be posted here"
-                url="annoucement"/>
+                urlQuery="annoucement"/>
             
             <hr></hr>
             <CategoryCard 
                 title="General Discussion" 
                 description="Discuss any topic related to cars!"
-                url="general"/>
+                urlQuery="general"/>
 
             <CategoryCard
                 title="Issues"
                 description="Post any issues or bugs you have encountered here!"
-                url="issues"/>
+                urlQuery="issues"/>
             
             <hr></hr>
             <CategoryCard 
                 title="Random" 
                 description="All topics welcome!"
-                url="random"/>
+                urlQuery="random"/>
         </Container>
     </>
   );

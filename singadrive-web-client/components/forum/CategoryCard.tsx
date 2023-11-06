@@ -5,10 +5,10 @@ import { Row, Col, Card, Button } from "react-bootstrap";
 interface CategoryCardProps {
   title: string;
   description: string;
-  url: string;
+  urlQuery: string;
 }
 
-const CategoryCard: FC<CategoryCardProps> = ({title, description, url}) => {
+const CategoryCard: FC<CategoryCardProps> = ({title, description, urlQuery}) => {
   return (
     <Row className="justify-content-center">
       <Col md={4} sm={6} xs={12} className="mb-3">
@@ -18,7 +18,7 @@ const CategoryCard: FC<CategoryCardProps> = ({title, description, url}) => {
           <Card.Text>
               {description}
           </Card.Text>
-          <Button variant="primary" href={"/forum/category?c=" + url}>Enter</Button>
+          <Button variant="primary" href={"/forum/category?c=" + urlQuery}>Enter</Button>
           </Card.Body>
       </Card>
       </Col>
