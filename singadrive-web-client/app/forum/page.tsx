@@ -1,9 +1,36 @@
 import TopNavbar from "@/components/TopNavbar";
 import { Container, Row, Col } from "react-bootstrap";
-import CategoryCard from "@/components/forum/CategoryCard";
+import config from "@/config";
+import dynamic from 'next/dynamic';
 
-function ForumPage() {
-  return (
+const CategoryCard = dynamic(() => import("@/components/forum/CategoryCard"), { 
+});
+
+interface SectionCategories {
+    category_id: number;
+    section_id: number;
+    category_ordering: number;
+    section_ordering: number;
+    section_title: string;
+    category_title: string;
+    description: string;
+};
+
+async function getSectionCategories() {
+    const res = await fetch(
+        `${config.API_BASE_URL}/api/forum-category/get-categories`,
+        { cache: 'no-store' }
+      );
+
+    const resultJSON = await res.json();
+    return resultJSON as SectionCategories[];
+}
+
+async function ForumPage() {
+    const sectionCategories = await getSectionCategories();
+
+    // TODO: Populate into the container...
+    return (
     <>
         <TopNavbar />
         <Container className="my-4">
