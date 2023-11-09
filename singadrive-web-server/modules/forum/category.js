@@ -23,17 +23,17 @@ router.get("/get-categories", async (req, res) => {
         let query = `SELECT * FROM "forum"."section_categories";`;
 
         const { rows } = await client.query(query);
+        console.log(rows);
         if (rows.length <= 0) {
             // NOTE: Should always have rows.
             res.status(500).json({ message: "Internal Server Error" });
         } else {
             res.status(200).json(rows);
         }
+        client.release();
     } catch (error) {
         console.error('Error fetching all categories.', error);
         res.status(500).json({ message: 'Internal Server Error' });
-    } finally {
-        client.release();
     }
 });
 
