@@ -13,6 +13,8 @@ const usersRoutes = require('./modules/user/users');
 const usersPublicDataRoutes = require('./modules/user/public');
 const usersProfileEditRoutes = require('./modules/user/edit');
 
+const forumCategoryRoutes = require('./modules/forum/category');
+
 // URL calls to '/api/example/...' will be passed to `modules/example.js'.
 app.use("/api/example", exampleRoutes);
 
@@ -21,7 +23,11 @@ app.use("/api/public-users", usersPublicDataRoutes);
 app.use("/api/users", usersRoutes);
 app.use("/api/users-edit", usersProfileEditRoutes);
 
+// NOTE: Map related routes...
 app.use("/api/rent-map", rentMapRoutes);
+
+// NOTE: Forum related routes...
+app.use("/api/forum-category", forumCategoryRoutes);
 
 // TODO: Remove this once not under use....
 app.get("/api/data", (req, res) => {
