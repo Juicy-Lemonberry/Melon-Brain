@@ -13,6 +13,25 @@ const PostItem = dynamic(() => import('@/components/forum/category/PostItem'), {
     ssr: false 
 });
 
+interface Tags {
+    id: number;
+    title: string;
+}
+
+async function fetchPresetTags(): Promise<Tags[]> {
+    try {
+        const res = await fetch(
+            `${config.API_BASE_URL}/api/forum-post/get-tags`,
+            { cache: 'no-store' }
+        );
+        const tags: Tags[] = await res.json();
+        return tags;
+    } catch (error) {
+        console.error('Failed to fetch tags:', error);
+        return [];
+    }
+}
+
 async function checkUserAuthentication(): Promise<boolean> {
     const parser = new UAParser();
     const browserName = parser.getBrowser().name;
@@ -45,24 +64,25 @@ const CategoryPage = () => {
     const searchParams = useSearchParams();
     const categoryTitle = searchParams.get('ctitle');
     const categoryId = searchParams.get('cid');
-    const presetTags = ['tag1', 'tag2', 'tag3', 'tag4'];
 
+    const [presetTags, setPresetTags] = useState<Tags[]>([]);
     const [userAuthenticated, setUserAuthenticated] = useState(false);
-    const [selectedTags, setSelectedTags] = useState<string[]>([]);
+    const [selectedTags, setSelectedTags] = useState<Tags[]>([]);
 
     useEffect(() => {
         checkUserAuthentication().then((result) => setUserAuthenticated(result));
+        fetchPresetTags().then((result) => setPresetTags(result));
+
         // TODO: API call to backend to fetch all posts...
     }, [categoryId]);
 
 
-    const handleTagSelection = (tag: string): void => {
+    const handleTagSelection = (tag: Tags): void => {
+        // Add tag, but if exists, remove it.
         if (selectedTags.includes(tag)) {
-          // Remove the tag if it already exists
-          setSelectedTags(selectedTags.filter(t => t !== tag));
+            setSelectedTags(selectedTags.filter(t => t !== tag));
         } else {
-          // Add the tag if it doesn't exist
-          setSelectedTags([...selectedTags, tag]);
+            setSelectedTags([...selectedTags, tag]);
         }
     };
       
@@ -116,7 +136,7 @@ const CategoryPage = () => {
                     <Dropdown.Menu>
                     {presetTags.map((tag, index) => (
                         <Dropdown.Item key={index} onClick={() => handleTagSelection(tag)}>
-                        {tag}
+                        {tag.title}
                         </Dropdown.Item>
                     ))}
                     </Dropdown.Menu>
@@ -126,7 +146,7 @@ const CategoryPage = () => {
                     <strong>Selected Tags:</strong>
                     <ul>
                         {selectedTags.map((tag, index) => (
-                        <li key={index}>{tag}</li>
+                        <li key={index}>{tag.title}</li>
                         ))}
                     </ul>
                 </div>
