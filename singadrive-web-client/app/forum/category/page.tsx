@@ -1,11 +1,10 @@
 'use client'
 import dynamic from 'next/dynamic';
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState, ChangeEvent, FormEvent } from 'react';
 import { useSearchParams } from 'next/navigation';
-import React from 'react';
 import TopNavbar from '@/components/TopNavbar';
 import { getSessionToken } from '@/utils/accountSessionCookie';
-import { Card, ListGroup, Form, Button } from 'react-bootstrap';
+import { Card, ListGroup, Form, Button, Dropdown } from 'react-bootstrap';
 import "@/styles/CategoryPage.scss"
 import UAParser from 'ua-parser-js';
 import config from '@/config';
@@ -46,17 +45,32 @@ const CategoryPage = () => {
     const searchParams = useSearchParams();
     const categoryTitle = searchParams.get('ctitle');
     const categoryId = searchParams.get('cid');
+    const presetTags = ['tag1', 'tag2', 'tag3', 'tag4'];
+
     const [userAuthenticated, setUserAuthenticated] = useState(false);
+    const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
     useEffect(() => {
         checkUserAuthentication().then((result) => setUserAuthenticated(result));
         // TODO: API call to backend to fetch all posts...
     }, [categoryId]);
 
+
+    const handleTagSelection = (tag: string): void => {
+        if (selectedTags.includes(tag)) {
+          // Remove the tag if it already exists
+          setSelectedTags(selectedTags.filter(t => t !== tag));
+        } else {
+          // Add the tag if it doesn't exist
+          setSelectedTags([...selectedTags, tag]);
+        }
+    };
+      
+
 //#region SUBMIT NEW POST LOGIC
     const [title, setTitle] = useState('');
     const [content, setContent] = useState('');
-    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
       e.preventDefault();
       // TODO: Backend call...
       console.log('New Post:', { title, content });
@@ -94,6 +108,29 @@ const CategoryPage = () => {
                     onChange={(e) => setContent(e.target.value)} 
                     />
                 </Form.Group>
+                <Dropdown>
+                    <Dropdown.Toggle variant="success" id="dropdown-basic">
+                    Select Tags
+                    </Dropdown.Toggle>
+
+                    <Dropdown.Menu>
+                    {presetTags.map((tag, index) => (
+                        <Dropdown.Item key={index} onClick={() => handleTagSelection(tag)}>
+                        {tag}
+                        </Dropdown.Item>
+                    ))}
+                    </Dropdown.Menu>
+                </Dropdown>
+
+                <div className='mb-2 mt-2'>
+                    <strong>Selected Tags:</strong>
+                    <ul>
+                        {selectedTags.map((tag, index) => (
+                        <li key={index}>{tag}</li>
+                        ))}
+                    </ul>
+                </div>
+
                 <Button variant="primary" type="submit">
                     Post
                 </Button>
