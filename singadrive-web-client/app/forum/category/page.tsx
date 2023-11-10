@@ -1,10 +1,10 @@
 'use client'
 import dynamic from 'next/dynamic';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import React from 'react';
 import TopNavbar from '@/components/TopNavbar';
-import { Card, ListGroup } from 'react-bootstrap';
+import { Card, ListGroup, Form, Button } from 'react-bootstrap';
 import "@/styles/CategoryPage.scss"
 
 const PostItem = dynamic(() => import('@/components/forum/category/PostItem'), {
@@ -13,18 +13,59 @@ const PostItem = dynamic(() => import('@/components/forum/category/PostItem'), {
 
 const CategoryPage = () => {
     const searchParams = useSearchParams();
-    const category = searchParams.get('c');
+    const categoryTitle = searchParams.get('ctitle');
+    const categoryId = searchParams.get('cid');
 
     useEffect(() => {
-        // TODO: backend route to fetch category data...
-        // then populate onto the list of posts below...
-    }, [category]);
+        // TODO: API call to backend to fetch all posts...
+    }, [categoryId]);
 
+//#region SUBMIT NEW POST LOGIC
+    const [title, setTitle] = useState('');
+    const [content, setContent] = useState('');
+    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+      e.preventDefault();
+      // TODO: Backend call...
+      console.log('New Post:', { title, content });
+  
+      setTitle('');
+      setContent('');
+    };  
+//#endregion
+    
     return (
     <>
         <TopNavbar/>
         <div className="d-flex flex-column align-items-center">
-            <h1>Forum Category: {category}</h1>
+            {/* TODO: Don't show this if user is not logged in... */}
+            <h1>Create new post</h1>
+            <Form onSubmit={handleSubmit} className="w-100 mb-3" style={{ maxWidth: '24rem' }}>
+            <Form.Group className="mb-3" controlId="postTitle">
+                <Form.Label>Title</Form.Label>
+                <Form.Control 
+                type="text" 
+                placeholder="Enter post title" 
+                value={title} 
+                onChange={(e) => setTitle(e.target.value)} 
+                />
+            </Form.Group>
+            <Form.Group className="mb-3" controlId="postContent">
+                <Form.Label>Content</Form.Label>
+                <Form.Control 
+                as="textarea" 
+                rows={3} 
+                placeholder="Enter post content" 
+                value={content} 
+                onChange={(e) => setContent(e.target.value)} 
+                />
+            </Form.Group>
+            <Button variant="primary" type="submit">
+                Post
+            </Button>
+            </Form>
+
+            <hr/>
+            <h1>Forum Category: {categoryTitle}</h1>
             <Card style={{ width: '24rem' }}>
                 <Card.Header className="card-list-header">Pinned</Card.Header>
                 <ListGroup variant="flush">
