@@ -12,6 +12,7 @@ const postgresPool = new Pool({
     port: 5432
 });
 
+const PostContentModel = require('../../mongo_models/forum/postContentModel');
 const mongoConfig = {
     url: `mongodb://127.0.0.1:27017/${process.env.MONGODB_DB}`,
     dbName: `${process.env.MONGODB_DB}`
@@ -36,5 +37,64 @@ router.get("/get-tags", async (req, res) => {
         res.status(500).json({ message: 'Internal Server Error' });
     }
 });
+
+//#region Create New Post
+
+async function insertNewPostRow(sessionToken, categoryID, tagsID) {
+    const client = await postgresPool.connect();
+    const query = `SELECT * FROM "forum"."create_new_post"($1, $2, $3);`;
+    const queryResult = await client.query(query, [sessionToken, categoryID, tagsID]);
+    const result = queryResult.rows[0];
+    client.release();
+    return result;
+}
+
+async function createNewPostDocument(postID, postTitle, postContent) {
+    await mongoose.connect(mongoConfig.url, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+    });
+
+    await PostContentModel.create({
+        id: postID,
+        title: postTitle,
+        content: postContent
+    });
+
+    mongoose.connection.close();
+}
+
+router.post("/create-post", async (req, res) => {
+    const sessionToken = req.body.session_token;
+    const tagsID = req.body.tags_id;
+    const postTitle = req.body.post_title;
+    const postContent = req.body.post_content;
+    const categoryID = req.body.category_id;
+
+    if ([sessionToken, tagsID, postTitle, postContent, categoryID].some(item => item == null)) {
+        res.status(400).send({ message: 'MISSING FIELDS' });
+        return;
+    }      
+
+    try {
+        const insertResult = insertNewPostRow(sessionToken, categoryID, tagsID);
+        const message = insertResult.message;
+        const postID = insertResult.id;
+
+        if (message != "SUCCESS"){
+            // TODO: More constructive error messages...
+            res.status(500).json({ message: 'Internal Server Error' });
+            return;
+        }
+
+        await createNewPostDocument(postID, postTitle, postContent);
+        res.status(200).json({ post_id: postID});
+    } catch (error) {
+        console.error('Error creating post...', error);
+        res.status(500).json({ message: 'Internal Server Error' });
+    }
+});
+
+//#endregion
 
 module.exports = router;
