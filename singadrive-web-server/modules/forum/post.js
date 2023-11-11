@@ -77,11 +77,12 @@ router.post("/create-post", async (req, res) => {
     }      
 
     try {
-        const insertResult = insertNewPostRow(sessionToken, categoryID, tagsID);
+        const insertResult = await insertNewPostRow(sessionToken, categoryID, tagsID);
+        console.log(insertResult);
         const message = insertResult.message;
-        const postID = insertResult.id;
+        const postID = insertResult.post_id;
 
-        if (message != "SUCCESS"){
+        if (message != "SUCCESS" ){
             // TODO: More constructive error messages...
             res.status(500).json({ message: 'Internal Server Error' });
             return;
