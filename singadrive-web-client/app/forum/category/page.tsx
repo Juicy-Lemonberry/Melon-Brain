@@ -15,7 +15,8 @@ const PostItem = dynamic(() => import('@/components/forum/category/PostItem'), {
 
 interface Tags {
     id: number;
-    title: string;
+    name: string;
+    description: string;
 }
 
 async function fetchPresetTags(): Promise<Tags[]> {
@@ -71,7 +72,7 @@ const CategoryPage = () => {
 
     useEffect(() => {
         checkUserAuthentication().then((result) => setUserAuthenticated(result));
-        fetchPresetTags().then((result) => setPresetTags(result));
+        fetchPresetTags().then((result) =>  setPresetTags(result));
 
         // TODO: API call to backend to fetch all posts...
     }, [categoryId]);
@@ -136,7 +137,7 @@ const CategoryPage = () => {
                     <Dropdown.Menu>
                     {presetTags.map((tag, index) => (
                         <Dropdown.Item key={index} onClick={() => handleTagSelection(tag)}>
-                        {tag.title}
+                        {tag.name}
                         </Dropdown.Item>
                     ))}
                     </Dropdown.Menu>
@@ -146,7 +147,7 @@ const CategoryPage = () => {
                     <strong>Selected Tags:</strong>
                     <ul>
                         {selectedTags.map((tag, index) => (
-                        <li key={index}>{tag.title}</li>
+                        <li key={index}>{tag.name}</li>
                         ))}
                     </ul>
                 </div>

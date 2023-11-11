@@ -23,7 +23,7 @@ router.get("/get-tags", async (req, res) => {
         let query = `SELECT * FROM "forum"."tags";`;
 
         const { rows } = await client.query(query);
-        console.log(rows);
+        
         if (rows.length <= 0) {
             // NOTE: Should always have rows.
             res.status(500).json({ message: "Internal Server Error" });
