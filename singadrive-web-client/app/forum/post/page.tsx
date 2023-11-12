@@ -2,22 +2,22 @@
 import React, { useState } from 'react';
 import TopNavbar from '@/components/TopNavbar';
 import { useSearchParams } from 'next/navigation';
-import { Container, Row, Col, Card, ListGroup, Badge, Form, Button } from 'react-bootstrap';
+import { Container, Row, Col, ListGroup, Form, Button } from 'react-bootstrap';
 import CommentItem from '@/components/forum/post/CommentItem';
+import PostContent from '@/components/forum/post/PostContent';
 
 const PostPage = () => {
     const [newComment, setNewComment] = useState('');
 
-    // TODO: Fetch actual post data from backend...
     const searchParams = useSearchParams();
-    const postID = searchParams.get('p');
+    let postID = searchParams.get('p');
+    // TODO: Invalidate more elegantly...
+    if (postID == null){
+        postID = '-1'
+    }
 
-    // NOTE: Sample data...
+    // NOTE: Sample Comment Data...
     const postData = {
-    title: "Understanding React Hooks",
-    content: "Hooks are a new addition in React 16.8 that lets you use state and other React features without writing a class...",
-    author: "Jane Doe",
-    datePosted: "2023-11-07",
     comments: [
         {
         id: 1,
@@ -65,16 +65,8 @@ const PostPage = () => {
             <Container className="my-4">
                 <Row className="justify-content-center">
                     <Col md={8}>
-                        <Card className="mb-3">
-                            <Card.Header as="h3">{postData.title}</Card.Header>
-                            <Card.Body>
-                                <Card.Subtitle className="mb-2 text-muted">
-                                    <span>By {postData.author}</span> <Badge bg="secondary">{postData.datePosted}</Badge>
-                                </Card.Subtitle>
-                                <Card.Text>{postData.content}</Card.Text>
-                            </Card.Body>
-                        </Card>
-
+                        
+                        <PostContent postID={Number.parseInt(postID)}/>
                         { /* Reply to post form */}
                         <Form onSubmit={handleCommentSubmit}>
                             <Form.Group className="mb-3" controlId="newComment">
