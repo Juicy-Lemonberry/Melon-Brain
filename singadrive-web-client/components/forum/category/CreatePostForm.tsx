@@ -78,7 +78,7 @@ const PostItem: FC<CreatePostFormProps> = ({categoryID, presetTags}) => {
                 return;
             }
 
-            router.push(`/forum/post?c=${postID}`);
+            router.push(`/forum/post?p=${postID}`);
         });
     };  
     return (
