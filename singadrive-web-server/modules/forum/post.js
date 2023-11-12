@@ -98,4 +98,71 @@ router.post("/create-post", async (req, res) => {
 
 //#endregion
 
+//#region Fetch Posts
+
+const PostInformation = require('../../models/postInformation');
+
+async function fetchPostFromPostgreSQL(postID) {
+    const client = await postgresPool.connect();
+    const query = `SELECT * FROM "forum"."get_post_details"($1);`;
+    const queryResult = await client.query(query, [postID]);
+    client.release();
+
+    if (queryResult.rows.length <= 0) {
+        return null;
+    }
+
+    return queryResult.rows[0];
+}
+
+async function fetchPostContent(postID) {
+    await mongoose.connect(mongoConfig.url, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+    });
+
+    const result = await PostContentModel.findOne({
+        id: postID
+    });
+
+    mongoose.connection.close();
+    return result;
+}
+
+router.post("/get-post", async (req, res) => {
+    const postID = req.body.post_id;
+
+    if (postID == null){
+        res.status(400).send({ message: 'MISSING FIELDS' });
+        return;
+    }
+
+    try {
+        const queryResult = await fetchPostFromPostgreSQL(postID);
+        if (queryResult == null){
+            res.status(500).json({ message: 'Internal Server Error' });
+            return;
+        }
+
+        const postInformation = new PostInformation(
+            postID, 
+            queryResult.category_id,
+            queryResult.username,
+            queryResult.display_name,
+            queryResult.tags,
+            queryResult.created_at
+        );
+
+        const postContent = await fetchPostContent(postID);
+        postInformation.populatePost(postContent.title, postContent.content);
+        
+        res.status(200).json(postInformation.toDictionaryObject());
+    } catch (error) {
+        console.log("Error occured trying to fetch post.\n", error)
+        res.status(500).json({ message: 'Internal Server Error' });
+    }
+})
+
+//#endregion
+
 module.exports = router;
