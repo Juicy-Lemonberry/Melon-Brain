@@ -8,6 +8,7 @@ import { Card, ListGroup } from 'react-bootstrap';
 import "@/styles/CategoryPage.scss"
 import UAParser from 'ua-parser-js';
 import config from '@/config';
+import PostGrouping from '@/components/forum/category/PostGroupings';
 
 const PostItem = dynamic(() => import('@/components/forum/category/PostItem'), {
     ssr: false 
@@ -76,10 +77,12 @@ const CategoryPage = () => {
     useEffect(() => {
         checkUserAuthentication().then((result) => setUserAuthenticated(result));
         fetchPresetTags().then((result) =>  setPresetTags(result));
-
-        // TODO: API call to backend to fetch all posts...
     }, [categoryId]);
     
+    if (categoryId == null){
+        return <div>Hmm, seems like you stumbled onto an unknown category...</div>
+    }
+
     return (
     <>
         <TopNavbar/>
@@ -93,31 +96,7 @@ const CategoryPage = () => {
             <hr/>
             <h1>Forum Category: {categoryTitle}</h1>
             <Card style={{ width: '24rem' }}>
-                {/* NOTE: Popular, as in top3 recently active posts... */}
-                <Card.Header className="card-list-header">Popular</Card.Header>
-                <ListGroup variant="flush">
-                    <PostItem 
-                        postID={10}
-                        title="some popular post"
-                        author='Derpman'
-                        postedOn={new Date()}
-                        lastActivity={new Date()}/>
-                </ListGroup>
-                <Card.Header className="card-list-header">Main</Card.Header>
-                <ListGroup variant="flush">
-                    <PostItem 
-                        postID={11}
-                        title="another postt"
-                        author='stickman'
-                        postedOn={new Date()}
-                        lastActivity={new Date()}/>
-                    <PostItem 
-                        postID={12}
-                        title="some post"
-                        author='POstman'
-                        postedOn={new Date()}
-                        lastActivity={new Date()}/>
-                </ListGroup>
+                <PostGrouping categoryID={categoryId}/>
             </Card>
         </div>
     </>
