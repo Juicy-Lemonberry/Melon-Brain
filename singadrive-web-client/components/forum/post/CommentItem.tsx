@@ -3,6 +3,7 @@ import React, { useState, FC } from 'react';
 import { Card, ListGroup, Button, Badge } from 'react-bootstrap';
 import CommentForm from './CommentForm';
 import Link from 'next/link';
+import VoteMenu from './VoteMenu';
 
 interface Comment {
     commentID: string;
@@ -10,7 +11,6 @@ interface Comment {
     displayName: string;
     createdDate: string;
     content: string;
-    votes: number;
     children: Comment[];
 }
 
@@ -20,15 +20,14 @@ interface CommentProps {
   displayName: string;
   content: string;
   datePosted: string;
-  votes: number;
   // NOTE: For nested comments
   replies: Comment[];
 
-  isLoggedIn: boolean;
+  loginID: string | null;
   postID: string;
 }
 
-const CommentItem: FC<CommentProps> = ({ id, username, displayName, content, datePosted, votes, replies, isLoggedIn, postID }) => {
+const CommentItem: FC<CommentProps> = ({ id, username, displayName, content, datePosted, replies, loginID, postID }) => {
     const [showReplyForm, setShowReplyForm] = useState(false);
 
     return (
@@ -48,14 +47,8 @@ const CommentItem: FC<CommentProps> = ({ id, username, displayName, content, dat
             <Badge bg="secondary">{new Date(datePosted).toLocaleDateString()}</Badge>
             </Card.Subtitle>
             <Card.Text>{content}</Card.Text>
-            {isLoggedIn && (
-                <div>
-                <Button variant="success" className="m-1" onClick={() => {/* TODO: Upvote logic */}}>Upvote</Button>
-                <span className="ml-2 mr-2">Votes: {votes}</span>
-                <Button variant="danger" className="m-1" onClick={() => {/* TODO: Downvote logic */}}>Downvote</Button>
-                </div>
-            )}
-            {isLoggedIn && !showReplyForm && (
+            <VoteMenu contentType='COMMENT' contentID={id} accountID={loginID}/>
+            {loginID && !showReplyForm && (
                 <Button variant="secondary" className="mt-2" onClick={() => setShowReplyForm(true)}>
                 Reply
                 </Button>
@@ -76,9 +69,8 @@ const CommentItem: FC<CommentProps> = ({ id, username, displayName, content, dat
                     displayName={reply.displayName}
                     content={reply.content}
                     datePosted={reply.createdDate}
-                    votes={reply.votes}
                     replies={reply.children}
-                    isLoggedIn={isLoggedIn}
+                    loginID={loginID}
                     postID={postID}
                 />
             ))}

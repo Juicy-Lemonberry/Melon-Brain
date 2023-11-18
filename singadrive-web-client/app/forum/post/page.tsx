@@ -9,6 +9,7 @@ import UAParser from 'ua-parser-js';
 import { getSessionToken } from '@/utils/accountSessionCookie';
 import config from '@/config';
 import CommentForm from '@/components/forum/post/CommentForm';
+import VoteMenu from '@/components/forum/post/VoteMenu';
 
 interface Comment {
     commentID: string;
@@ -16,7 +17,6 @@ interface Comment {
     displayName: string;
     createdDate: string;
     content: string;
-    votes: number;
     children: Comment[];
 }
 
@@ -41,11 +41,10 @@ async function getPostComments(postID: string): Promise<Comment[]> {
         return [];
     }
 
-    console.log(data.comments);
     return data.comments as Comment[];
 }
 
-async function checkUserAuthentication(): Promise<boolean> {
+async function checkUserAuthentication(): Promise<string | null> {
     const parser = new UAParser();
     const browserName = parser.getBrowser().name;
     const sessionToken = getSessionToken();
@@ -68,13 +67,14 @@ async function checkUserAuthentication(): Promise<boolean> {
     const data = await response.json();
 
     if (response.ok && data["message"] === "OK") {
-        return true;
+        return data["account_id"];
     }
-    return false;
+
+    return null;
 }
 
 const PostPage = () => {
-    const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const [loginID, setLoginID] = useState<string| null>(null);
     const [comments, setComments] = useState<Comment[]>([]);
 
     const searchParams = useSearchParams();
@@ -82,7 +82,7 @@ const PostPage = () => {
     let postID = searchParams.get('p') ?? '-1';
 
     useEffect(() => {
-        checkUserAuthentication().then((result) => setIsLoggedIn(result));
+        checkUserAuthentication().then((result) => setLoginID(result));
         getPostComments(postID).then((result) => setComments(result));
     }, []);
 
@@ -97,11 +97,14 @@ const PostPage = () => {
                         { /* Reply to post form */}
 
                         {
-                            isLoggedIn
+                            loginID
                             &&
                             <CommentForm postID={postID} parentID={null}/>
                         }
 
+                        <hr></hr>
+                        <VoteMenu contentType='POST' contentID={postID} accountID={loginID}/>
+                        
                         <hr></hr>
                         <h3>Comments:</h3>
                         <ListGroup>
@@ -113,9 +116,8 @@ const PostPage = () => {
                                     displayName={comment.displayName}
                                     content={comment.content}
                                     datePosted={comment.createdDate}
-                                    votes={comment.votes}
                                     replies={comment.children}
-                                    isLoggedIn={isLoggedIn}
+                                    loginID={loginID}
                                     postID={postID}
                                 />
                             ))}
