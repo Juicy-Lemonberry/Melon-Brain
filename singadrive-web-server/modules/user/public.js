@@ -14,7 +14,6 @@ const postgresPool = new Pool({
 const AccountsModel = require('../../mongo_models/user/accounts');
 
 router.get('/profile', async (req, res) => {
-  console.log(req.query);
   const username = req.query.username;
 
   try {

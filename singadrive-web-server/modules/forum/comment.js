@@ -22,14 +22,11 @@ async function createCommentPostgreSQL(postID, sessionToken, browserInfo) {
 }
 
 async function storeCommentContent(commentID, content, parentContentID) {
-    console.log(parentContentID);
-
     await CommentContentModel.create({
         id: commentID,
         content: content,
         parent_comment_id: parentContentID
     });
-
 }
 
 router.post("/create-comment", async (req, res) => {
@@ -104,7 +101,6 @@ async function buildCommentTree(commentData, commentContentMap, parentCommentId 
                 displayName: comment.display_name || 'Deleted User',
                 createdDate: comment.created_at,
                 content: commentContent.content,
-                votes: 0,
                 children: childComments
             };
         });

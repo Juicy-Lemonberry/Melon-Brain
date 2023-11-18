@@ -12,10 +12,6 @@ const postgresPool = new Pool({
 });
 
 const PostContentModel = require('../../mongo_models/forum/postContentModel');
-const mongoConfig = {
-    url: `mongodb://127.0.0.1:27017/${process.env.MONGODB_DB}`,
-    dbName: `${process.env.MONGODB_DB}`
-};
 
 router.get("/get-tags", async (req, res) => {
     try {
