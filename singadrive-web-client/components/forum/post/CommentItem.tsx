@@ -1,6 +1,7 @@
 'use client'
 import React, { useState, FC } from 'react';
-import { Card, ListGroup, Button, Form } from 'react-bootstrap';
+import { Card, ListGroup, Button } from 'react-bootstrap';
+import CommentForm from './CommentForm';
 
 
 interface CommentProps {
@@ -11,10 +12,12 @@ interface CommentProps {
   votes: number;
   // NOTE: For nested comments
   replies?: CommentProps[];
+
+  isLoggedIn: boolean;
+  postID: string;
 }
 
-const CommentItem: FC<CommentProps> = ({ author, content, datePosted, votes, replies }) => {
-    const [isLoggedIn, setIsLoggedIn] = useState(true);
+const CommentItem: FC<CommentProps> = ({ id, author, content, datePosted, votes, replies, isLoggedIn, postID }) => {
     const [showReplyForm, setShowReplyForm] = useState(false);
     const [newReply, setNewReply] = useState('');
 
@@ -39,26 +42,13 @@ const CommentItem: FC<CommentProps> = ({ author, content, datePosted, votes, rep
                 <Button variant="danger" className="m-1" onClick={() => {/* TODO: Downvote logic */}}>Downvote</Button>
                 </div>
             )}
-            {!showReplyForm && (
+            {isLoggedIn && !showReplyForm && (
                 <Button variant="secondary" className="mt-2" onClick={() => setShowReplyForm(true)}>
                 Reply
                 </Button>
             )}
             {showReplyForm && (
-                <Form onSubmit={handleReplySubmit}>
-                <Form.Group className="mb-3 mt-2" controlId="replyComment">
-                    <Form.Control
-                    as="textarea"
-                    rows={2}
-                    value={newReply}
-                    onChange={(e) => setNewReply(e.target.value)}
-                    placeholder="Write your reply here..."
-                    />
-                </Form.Group>
-                <Button variant="primary" type="submit">
-                    Submit Reply
-                </Button>
-                </Form>
+                <CommentForm postID={postID}/>
             )}
             </Card.Body>
         </Card>
@@ -67,13 +57,15 @@ const CommentItem: FC<CommentProps> = ({ author, content, datePosted, votes, rep
             {/* NOTE: Recursively render nested comments */}
             {replies.map(reply => (
                 <CommentItem
-                key={reply.id}
-                id={reply.id}
-                author={reply.author}
-                content={reply.content}
-                datePosted={reply.datePosted}
-                votes={reply.votes}
-                replies={reply.replies}
+                    key={reply.id}
+                    id={reply.id}
+                    author={reply.author}
+                    content={reply.content}
+                    datePosted={reply.datePosted}
+                    votes={reply.votes}
+                    replies={reply.replies}
+                    isLoggedIn={reply.isLoggedIn}
+                    postID={postID}
                 />
             ))}
             </ListGroup>
