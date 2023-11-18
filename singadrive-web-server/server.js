@@ -15,6 +15,7 @@ const usersProfileEditRoutes = require('./modules/user/edit');
 
 const forumCategoryRoutes = require('./modules/forum/category');
 const forumPostRoutes = require('./modules/forum/post');
+const forumCommentRoutes = require('./modules/forum/comment');
 
 // URL calls to '/api/example/...' will be passed to `modules/example.js'.
 app.use("/api/example", exampleRoutes);
@@ -30,6 +31,7 @@ app.use("/api/rent-map", rentMapRoutes);
 // NOTE: Forum related routes...
 app.use("/api/forum-category", forumCategoryRoutes);
 app.use("/api/forum-post", forumPostRoutes);
+app.use("/api/forum-comment", forumCommentRoutes);
 
 // TODO: Remove this once not under use....
 app.get("/api/data", (req, res) => {
