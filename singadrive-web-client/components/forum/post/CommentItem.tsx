@@ -1,39 +1,52 @@
 'use client'
 import React, { useState, FC } from 'react';
-import { Card, ListGroup, Button } from 'react-bootstrap';
+import { Card, ListGroup, Button, Badge } from 'react-bootstrap';
 import CommentForm from './CommentForm';
+import Link from 'next/link';
 
+interface Comment {
+    commentID: string;
+    username: string | null;
+    displayName: string;
+    createdDate: string;
+    content: string;
+    votes: number;
+    children: Comment[];
+}
 
 interface CommentProps {
-  id: number;
-  author: string;
+  id: string;
+  username: string | null;
+  displayName: string;
   content: string;
   datePosted: string;
   votes: number;
   // NOTE: For nested comments
-  replies?: CommentProps[];
+  replies: Comment[];
 
   isLoggedIn: boolean;
   postID: string;
 }
 
-const CommentItem: FC<CommentProps> = ({ id, author, content, datePosted, votes, replies, isLoggedIn, postID }) => {
+const CommentItem: FC<CommentProps> = ({ id, username, displayName, content, datePosted, votes, replies, isLoggedIn, postID }) => {
     const [showReplyForm, setShowReplyForm] = useState(false);
-    const [newReply, setNewReply] = useState('');
-
-    const handleReplySubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        // TODO: send to backend to handle...
-        console.log(newReply);
-        setNewReply('');
-    };
 
     return (
         <ListGroup.Item>
         <Card>
             <Card.Body>
-            <Card.Title>{author}</Card.Title>
-            <Card.Subtitle className="mb-2 text-muted">{datePosted}</Card.Subtitle>
+            <Card.Title>
+                {username ? (
+                    <Link href={`/profile?username=${encodeURIComponent(username)}`}>
+                        <a className="text-reset">{displayName}</a>
+                    </Link>
+                ) : (
+                    'Deleted User'
+                )}
+            </Card.Title>
+            <Card.Subtitle className="mb-2 text-muted">
+            <Badge bg="secondary">{new Date(datePosted).toLocaleDateString()}</Badge>
+            </Card.Subtitle>
             <Card.Text>{content}</Card.Text>
             {isLoggedIn && (
                 <div>
@@ -48,7 +61,7 @@ const CommentItem: FC<CommentProps> = ({ id, author, content, datePosted, votes,
                 </Button>
             )}
             {showReplyForm && (
-                <CommentForm postID={postID}/>
+                <CommentForm postID={postID} parentID={id}/>
             )}
             </Card.Body>
         </Card>
@@ -57,14 +70,15 @@ const CommentItem: FC<CommentProps> = ({ id, author, content, datePosted, votes,
             {/* NOTE: Recursively render nested comments */}
             {replies.map(reply => (
                 <CommentItem
-                    key={reply.id}
-                    id={reply.id}
-                    author={reply.author}
+                    key={reply.commentID}
+                    id={reply.commentID}
+                    username={reply.username}
+                    displayName={reply.displayName}
                     content={reply.content}
-                    datePosted={reply.datePosted}
+                    datePosted={reply.createdDate}
                     votes={reply.votes}
-                    replies={reply.replies}
-                    isLoggedIn={reply.isLoggedIn}
+                    replies={reply.children}
+                    isLoggedIn={isLoggedIn}
                     postID={postID}
                 />
             ))}

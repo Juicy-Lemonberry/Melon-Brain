@@ -7,9 +7,10 @@ import UAParser from 'ua-parser-js';
 
 interface CommentFormProp {
   postID: string;
+  parentID: string | null;
 }
 
-async function createNewCommentRequest(postID: string, content: string) : Promise<boolean> {
+async function createNewCommentRequest(postID: string, content: string, parentID: string | null) : Promise<boolean> {
     const parser = new UAParser();
     const browserInfo = parser.getBrowser().name;
     const sessionToken = getSessionToken();
@@ -18,7 +19,8 @@ async function createNewCommentRequest(postID: string, content: string) : Promis
         "session_token": sessionToken,
         "post_id": postID,
         "content": content,
-        "browser_info": browserInfo
+        "browser_info": browserInfo,
+        "parent_comment_id": parentID
     };
 
     const options = {
@@ -37,13 +39,13 @@ async function createNewCommentRequest(postID: string, content: string) : Promis
     return response.status === 200;
 }
 
-const CommentForm: FC<CommentFormProp> = ({ postID }) => {
+const CommentForm: FC<CommentFormProp> = ({ postID, parentID }) => {
     const [commentContent, setCommentContent] = useState('');
 
     const handleReplySubmit = (e: React.FormEvent) => {
         e.preventDefault();
 
-        createNewCommentRequest(postID, commentContent).then((result) => {
+        createNewCommentRequest(postID, commentContent, parentID).then((result) => {
             // TODO: Fail/Success message...
             window.location.reload();
         });

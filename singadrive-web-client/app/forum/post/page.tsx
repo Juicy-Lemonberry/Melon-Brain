@@ -10,6 +10,41 @@ import { getSessionToken } from '@/utils/accountSessionCookie';
 import config from '@/config';
 import CommentForm from '@/components/forum/post/CommentForm';
 
+interface Comment {
+    commentID: string;
+    username: string | null;
+    displayName: string;
+    createdDate: string;
+    content: string;
+    votes: number;
+    children: Comment[];
+}
+
+async function getPostComments(postID: string): Promise<Comment[]> {
+    const jsonData = {
+        "post_id": postID
+    };
+
+    const options = {
+        method: 'POST',
+        headers: {
+        'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(jsonData)
+    };
+
+    const endpointUrl = `${config.API_BASE_URL}/api/forum-comment/get-post-comments`;
+    const response = await fetch(endpointUrl, options);
+    const data = await response.json();
+
+    if (!response.ok) {
+        return [];
+    }
+
+    console.log(data.comments);
+    return data.comments as Comment[];
+}
+
 async function checkUserAuthentication(): Promise<boolean> {
     const parser = new UAParser();
     const browserName = parser.getBrowser().name;
@@ -39,68 +74,16 @@ async function checkUserAuthentication(): Promise<boolean> {
 }
 
 const PostPage = () => {
-    const [newComment, setNewComment] = useState('');
     const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const [comments, setComments] = useState<Comment[]>([]);
 
     const searchParams = useSearchParams();
     // TODO: Invalidate more elegantly
     let postID = searchParams.get('p') ?? '-1';
 
-    // NOTE: Sample Comment Data...
-    const postData = {
-    comments: [
-        {
-        id: 1,
-        author: "John Smith",
-        content: "Great article! Thanks for the info.",
-        datePosted: "2023-11-08",
-        votes: 10,
-        isLoggedIn: isLoggedIn,
-        postID: '-1',
-        replies: [
-            {
-            id: 3,
-            author: "Jane Doe",
-            content: "Glad you liked it!",
-            datePosted: "2023-11-09",
-            votes: 5,
-            isLoggedIn: isLoggedIn,
-            postID: '-1'
-            },
-            {
-            id: 4,
-            author: "Mark Green",
-            content: "This clarified a lot, thanks!",
-            datePosted: "2023-11-09",
-            votes: 3,
-            isLoggedIn: isLoggedIn,
-            postID: '-1'
-            },
-        ],
-        },
-        {
-        id: 2,
-        author: "Alice Brown",
-        content: "I've been having a hard time with hooks, but this makes more sense now.",
-        datePosted: "2023-11-08",
-        votes: 8,
-        isLoggedIn: isLoggedIn,
-        postID: '-1'
-        },
-    ],
-    };
-
-    
-
-    const handleCommentSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        // TODO: Handle send to backend new comment
-        console.log(newComment);
-        setNewComment('');
-    };
-
     useEffect(() => {
         checkUserAuthentication().then((result) => setIsLoggedIn(result));
+        getPostComments(postID).then((result) => setComments(result));
     }, []);
 
     return (
@@ -116,21 +99,22 @@ const PostPage = () => {
                         {
                             isLoggedIn
                             &&
-                            <CommentForm postID={postID}/>
+                            <CommentForm postID={postID} parentID={null}/>
                         }
 
                         <hr></hr>
                         <h3>Comments:</h3>
                         <ListGroup>
-                            {postData.comments.map(comment => (
+                            {comments.map(comment => (
                                 <CommentItem
-                                    key={comment.id}
-                                    id={comment.id}
-                                    author={comment.author}
+                                    key={comment.commentID}
+                                    id={comment.commentID}
+                                    username={comment.username}
+                                    displayName={comment.displayName}
                                     content={comment.content}
-                                    datePosted={comment.datePosted}
+                                    datePosted={comment.createdDate}
                                     votes={comment.votes}
-                                    replies={comment.replies}
+                                    replies={comment.children}
                                     isLoggedIn={isLoggedIn}
                                     postID={postID}
                                 />
