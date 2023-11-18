@@ -1,5 +1,4 @@
 const express = require('express');
-const mongoose = require('mongoose');
 const router = express.Router();
 
 const { Pool } = require('pg');
@@ -13,11 +12,6 @@ const postgresPool = new Pool({
 });
 
 const PostContentModel = require('../../mongo_models/forum/postContentModel');
-const mongoConfig = {
-    url: `mongodb://127.0.0.1:27017/${process.env.MONGODB_DB}`,
-    dbName: `${process.env.MONGODB_DB}`
-};
-
 router.get("/get-categories", async (req, res) => {
     try {
         const client = await postgresPool.connect();
@@ -81,10 +75,6 @@ router.post("/get-posts", async (req , res) => {
     }
 
     try {
-        await mongoose.connect(mongoConfig.url, {
-            useNewUrlParser: true,
-            useUnifiedTopology: true,
-        });
 
         let miniPosts = []
 
@@ -116,10 +106,6 @@ router.post("/get-posts", async (req , res) => {
     } catch (error) {
         console.log("Error occured trying to fetch posts in category.\n", error)
         res.status(500).json({ message: 'Internal Server Error' });
-    } finally {
-        if (mongoose.connection.readyState) {
-            mongoose.connection.close();
-        }
     }
 });
 

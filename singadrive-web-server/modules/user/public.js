@@ -1,5 +1,4 @@
 const express = require('express');
-const mongoose = require('mongoose');
 const router = express.Router();
 const { Pool } = require('pg');
 
@@ -13,10 +12,6 @@ const postgresPool = new Pool({
 });
 
 const AccountsModel = require('../../mongo_models/user/accounts');
-const mongoConfig = {
-    url: `mongodb://127.0.0.1:27017/${process.env.MONGODB_DB}`,
-    dbName: `${process.env.MONGODB_DB}`
-};
 
 router.get('/profile', async (req, res) => {
   console.log(req.query);
@@ -37,12 +32,6 @@ router.get('/profile', async (req, res) => {
     resultData = rows[0];
     client.release();
 
-    // From mongoose...
-    await mongoose.connect(mongoConfig.url, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
-
     let accountData = await AccountsModel.findOne(
       { id: resultData.id }
     );
@@ -54,8 +43,6 @@ router.get('/profile', async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).send('Internal Server Error');
-  } finally {
-    mongoose.connection.close();
   }
 });
 

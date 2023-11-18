@@ -1,5 +1,4 @@
 const express = require('express');
-const mongoose = require('mongoose');
 const router = express.Router();
 
 const { Pool } = require('pg');
@@ -50,18 +49,11 @@ async function insertNewPostRow(sessionToken, categoryID, tagsID) {
 }
 
 async function createNewPostDocument(postID, postTitle, postContent) {
-    await mongoose.connect(mongoConfig.url, {
-        useNewUrlParser: true,
-        useUnifiedTopology: true,
-    });
-
     await PostContentModel.create({
         id: postID,
         title: postTitle,
         content: postContent
     });
-
-    mongoose.connection.close();
 }
 
 router.post("/create-post", async (req, res) => {
@@ -116,16 +108,10 @@ async function fetchPostFromPostgreSQL(postID) {
 }
 
 async function fetchPostContent(postID) {
-    await mongoose.connect(mongoConfig.url, {
-        useNewUrlParser: true,
-        useUnifiedTopology: true,
-    });
-
     const result = await PostContentModel.findOne({
         id: postID
     });
-
-    mongoose.connection.close();
+    
     return result;
 }
 
