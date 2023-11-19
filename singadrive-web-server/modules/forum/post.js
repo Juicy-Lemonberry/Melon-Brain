@@ -1,15 +1,7 @@
 const express = require('express');
 const router = express.Router();
 
-const { Pool } = require('pg');
-const postgresPool = new Pool({
-    host: 'localhost',
-    database: process.env.POSTGRES_DB,
-
-    user: process.env.POSTGRES_USER,
-    password: process.env.POSTGRES_PASSWORD,
-    port: 5432
-});
+const postgresPool = require('../../configs/postgresPool');
 
 const PostContentModel = require('../../mongo_models/forum/postContentModel');
 
@@ -145,6 +137,56 @@ router.post("/get-post", async (req, res) => {
     }
 })
 
+//#endregion
+
+//#region Edit Post
+
+async function updatePostContent(postID, newContent) {
+    await PostContentModel.findOneAndUpdate(
+        { id: postID }, 
+        { content: newContent }
+    );
+}
+
+async function checkIfUserPost(sessionToken, browserInfo, postID) {
+    const client = await postgresPool.connect();
+    const query = `SELECT * FROM "forum"."is_user_post"($1, $2, $3);`;
+    const queryResult = await client.query(query, [sessionToken, browserInfo, postID]);
+    client.release();
+
+    if (queryResult.rows.length <= 0) {
+        return null;
+    }
+
+    return queryResult.rows[0];
+}
+
+router.post("/edit-post", async (req, res) => {
+    const sessionToken = req.body.session_token;
+    const browserInfo = req.body.browser_info;
+    const postID = req.body.post_id;
+    const newContent = req.body.new_content;
+
+    if ([sessionToken, browserInfo, postID, newContent].some(item => item == null)) {
+        res.status(400).send({ message: 'MISSING FIELDS' });
+        return;
+    }      
+
+    try {
+        const checkResult = await checkIfUserPost(sessionToken, browserInfo, postID);
+        if (!checkResult.is_user) {
+            // TODO: Return more information...
+            res.status(400).send({ message: 'INVALID USER' });
+            return;
+        }
+
+        await updatePostContent(postID, newContent);
+        res.status(200).send({ message: 'SUCCESS' });
+    } catch (error) {
+        console.error('Error updating post...', error);
+        res.status(500).json({ message: 'Internal Server Error' });
+    }
+});
 //#endregion
 
 module.exports = router;
