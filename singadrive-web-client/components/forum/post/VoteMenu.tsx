@@ -24,6 +24,7 @@ interface VoteMenuProps {
     contentType: ContentType | string;
     contentID: string;
     accountID: string | null;
+    isAccountContent: boolean;
 }
 
 async function getTotalVotes(contentType: string, contentID: string): Promise<string> {
@@ -130,7 +131,7 @@ function displayVotingStatus(votingStatus: VotingStatus) {
     }
 }
 
-const VoteMenu: FC<VoteMenuProps> = ({ contentType, contentID, accountID }) => {
+const VoteMenu: FC<VoteMenuProps> = ({ contentType, contentID, accountID, isAccountContent }) => {
     const [voteCount, setVoteCount] = useState('0');
     const [accountVoteState, setAccountVoteState] = useState<string | null>(null);
     const [votingStatus, setVotingStaus] = useState<VotingStatus>(VotingStatus.None);
@@ -141,6 +142,9 @@ const VoteMenu: FC<VoteMenuProps> = ({ contentType, contentID, accountID }) => {
     }, [contentID])
 
     useEffect(() => {
+        if (isAccountContent) {
+            return;
+        }
         getUserVotedState(contentType as string, contentID, accountID)
         .then((result) => setAccountVoteState(result));
     }, [accountID])
@@ -152,6 +156,15 @@ const VoteMenu: FC<VoteMenuProps> = ({ contentType, contentID, accountID }) => {
             accountID,
             upvote ? VoteValue.Upvote : VoteValue.Downvote
         ).then((result) => setVotingStaus(result));
+    }
+
+    if (isAccountContent) {
+        return (
+            <div>
+                <p>You cannot vote on your own content...</p>
+                <span className="ml-2 mr-2">Votes: {voteCount}</span>
+            </div>
+        );
     }
 
     if (votingStatus != VotingStatus.None) {

@@ -24,11 +24,13 @@ interface CommentProps {
   replies: Comment[];
 
   loginID: string | null;
+  loginUsername: string | null;
   postID: string;
 }
 
-const CommentItem: FC<CommentProps> = ({ id, username, displayName, content, datePosted, replies, loginID, postID }) => {
+const CommentItem: FC<CommentProps> = ({ id, username, displayName, content, datePosted, replies, loginID, loginUsername, postID }) => {
     const [showReplyForm, setShowReplyForm] = useState(false);
+    const isUserContent = (username === loginUsername);
 
     return (
         <ListGroup.Item>
@@ -47,7 +49,7 @@ const CommentItem: FC<CommentProps> = ({ id, username, displayName, content, dat
             <Badge bg="secondary">{new Date(datePosted).toLocaleDateString()}</Badge>
             </Card.Subtitle>
             <Card.Text>{content}</Card.Text>
-            <VoteMenu contentType='COMMENT' contentID={id} accountID={loginID}/>
+            <VoteMenu contentType='COMMENT' contentID={id} accountID={loginID} isAccountContent={isUserContent}/>
             {loginID && !showReplyForm && (
                 <Button variant="secondary" className="mt-2" onClick={() => setShowReplyForm(true)}>
                 Reply
@@ -71,6 +73,7 @@ const CommentItem: FC<CommentProps> = ({ id, username, displayName, content, dat
                     datePosted={reply.createdDate}
                     replies={reply.children}
                     loginID={loginID}
+                    loginUsername={loginUsername}
                     postID={postID}
                 />
             ))}
