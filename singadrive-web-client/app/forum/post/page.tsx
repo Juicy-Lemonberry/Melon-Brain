@@ -11,6 +11,7 @@ import config from '@/config';
 import CommentForm from '@/components/forum/post/CommentForm';
 import VoteMenu from '@/components/forum/post/VoteMenu';
 import EditContentForm from '@/components/forum/EditContentForm';
+import DeleteContentButton from '@/components/forum/DeleteContentButton';
 
 interface Comment {
     commentID: string;
@@ -199,7 +200,12 @@ const PostPage = () => {
                             ) : (
                                 <>
                                     <PostContent postInformation={postInformation} isLoading={isLoadingInformation}/>
-                                    {isLoggedInUserPost && <Button onClick={handleEditClick}>Edit</Button>}
+                                    {isLoggedInUserPost && 
+                                        <>
+                                            <Button onClick={handleEditClick}>Edit</Button>
+                                            <DeleteContentButton contentID={postID} contentType='POST' />
+                                        </>
+                                    }
                                     { /* Reply to post form */}
                                 </>
                             )

@@ -9,6 +9,9 @@ import '@/styles/TopNavbar.scss';
 
 const TopNavbar: React.FC = () => {
   const [user, setUser] = useState(null);
+
+  const parser = new UAParser();
+  const browserInfo = parser.getBrowser().name;
   
   const handleLogout = async () => {
     try {
@@ -18,7 +21,10 @@ const TopNavbar: React.FC = () => {
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ session_token: getSessionToken() })
+        body: JSON.stringify({ 
+          session_token: getSessionToken(),
+          browser_info: browserInfo
+        })
       });
       
       removeSessionToken();

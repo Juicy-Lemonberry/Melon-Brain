@@ -8,6 +8,7 @@ import EditContentForm from '../EditContentForm';
 import UAParser from 'ua-parser-js';
 import { getSessionToken } from '@/utils/accountSessionCookie';
 import config from '@/config';
+import DeleteContentButton from '../DeleteContentButton';
 
 interface Comment {
     commentID: string;
@@ -111,7 +112,12 @@ const CommentItem: FC<CommentProps> = ({ id, username, displayName, content, dat
                     <>
                         <Card.Text>{content}</Card.Text>
                         <VoteMenu contentType='COMMENT' contentID={id} accountID={loginID} isAccountContent={isUserContent}/>
-                        {isUserContent && <Button onClick={handleEditClick}>Edit</Button>}
+                        {isUserContent &&                                         
+                            <>
+                                <Button onClick={handleEditClick}>Edit</Button>
+                                <DeleteContentButton contentID={id} contentType='COMMENT' />
+                            </>
+                        }
                         <hr></hr>
                         
                         {loginID && !showReplyForm && (
