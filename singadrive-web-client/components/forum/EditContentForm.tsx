@@ -26,8 +26,8 @@ const EditContentForm: FC<EditContentFormProps> = ({ originalContent, onEditSubm
                         onChange={(e) => setEditContent(e.target.value)}
                     />
                 </Form.Group>
-                <Button variant="primary" type="submit">Submit Edit</Button>
-                <Button variant="secondary" onClick={() => onEditCancel()}>Cancel</Button>
+                <Button className="mr-1 ml-1" variant="primary" type="submit">Submit Edit</Button>
+                <Button className="mr-1 ml-1" variant="secondary" onClick={() => onEditCancel()}>Cancel</Button>
             </Form>
         </>
     );
