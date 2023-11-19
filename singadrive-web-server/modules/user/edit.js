@@ -1,6 +1,5 @@
 
 const express = require('express');
-const mongoose = require('mongoose');
 const router = express.Router();
 const bcrypt = require('bcrypt');
 
@@ -16,10 +15,6 @@ const postgresPool = new Pool({
 
 const LogsModel = require('../../mongo_models/user/logs');
 const AccountsModel = require('../../mongo_models/user/accounts');
-const mongoConfig = {
-    url: `mongodb://127.0.0.1:27017/${process.env.MONGODB_DB}`,
-    dbName: `${process.env.MONGODB_DB}`
-};
 
 //#region UTILs
 function _isValidPassword(password) {
@@ -84,11 +79,6 @@ router.post("/get-data", async (req, res) => {
     resultObj.session_tokens = sessionTokensResult.rows;
     client.release(); 
 
-    await mongoose.connect(mongoConfig.url, {
-        useNewUrlParser: true,
-        useUnifiedTopology: true,
-    });
-
     // Get description, birthday and external links from MongoDB
     let accountData = await AccountsModel.findOne(
       { id: resultObj.account_id }
@@ -108,8 +98,6 @@ router.post("/get-data", async (req, res) => {
   } catch (error) {
     console.error('Error executing query', error);
     res.status(500).json({ message: 'Internal Server Error' });
-  } finally {
-    mongoose.connection.close();
   }
 });
 
@@ -267,11 +255,6 @@ router.post("/update-data", async (req, res) => {
     }
     client.release();
 
-    await mongoose.connect(mongoConfig.url, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
-
     await AccountsModel.findOneAndUpdate(
       { id: userID },
       {
@@ -304,8 +287,6 @@ router.post("/update-data", async (req, res) => {
   } catch (error) {
     console.error('Error executing query', error);
     res.status(500).json({ message: 'Internal Server Error' });
-  } finally {
-    mongoose.connection.close();
   }
 });
 
@@ -332,21 +313,12 @@ async function _deleteSessionToken(sessionToken, browserInfo, deleteTarget) {
   }
 }
 
-async function _logDeletion(mongoConfig, LogsModel, userID, browserInfo) {
-  await mongoose.connect(mongoConfig.url, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
+async function _logDeletion(LogsModel, userID, browserInfo) {
+  await LogsModel.create({
+    id: userID,
+    description: `Deleted session token related to ${browserInfo}`,
+    browser_info: browserInfo
   });
-  
-  try {
-    await LogsModel.create({
-      id: userID,
-      description: `Deleted session token related to ${browserInfo}`,
-      browser_info: browserInfo
-    });
-  } finally {
-    mongoose.connection.close();
-  }
 }
 
 async function _getUserID(username) {
@@ -380,7 +352,7 @@ router.post("/delete-token", async (req, res) => {
       if (userID == null){
         console.log(`Failed to log the deletion of a session token related to user ${userID}!`)
       } else {
-        await _logDeletion(mongoConfig, LogsModel, userID, browserInfo);
+        await _logDeletion(LogsModel, userID, browserInfo);
       }
     }
 

@@ -9,6 +9,9 @@ import '@/styles/TopNavbar.scss';
 
 const TopNavbar: React.FC = () => {
   const [user, setUser] = useState(null);
+
+  const parser = new UAParser();
+  const browserInfo = parser.getBrowser().name;
   
   const handleLogout = async () => {
     try {
@@ -18,7 +21,10 @@ const TopNavbar: React.FC = () => {
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ session_token: getSessionToken() })
+        body: JSON.stringify({ 
+          session_token: getSessionToken(),
+          browser_info: browserInfo
+        })
       });
       
       removeSessionToken();
@@ -79,6 +85,7 @@ const TopNavbar: React.FC = () => {
         <Nav className="mr-auto">
           <Nav.Link href="/">Home</Nav.Link>
           <Nav.Link href="/about">About</Nav.Link>
+          <Nav.Link href="/forum">Forum</Nav.Link>
         </Nav>
         <Nav className="ms-auto me-5">
           {user ? (
