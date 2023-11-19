@@ -4,6 +4,7 @@ const router = express.Router();
 const postgresPool = require('../../configs/postgresPool');
 
 const PostContentModel = require('../../mongo_models/forum/postContentModel');
+const CommentContentModel = require('../../mongo_models/forum/commentContentModel');
 
 router.get("/get-tags", async (req, res) => {
     try {
@@ -58,7 +59,6 @@ router.post("/create-post", async (req, res) => {
 
     try {
         const insertResult = await insertNewPostRow(sessionToken, categoryID, tagsID);
-        console.log(insertResult);
         const message = insertResult.message;
         const postID = insertResult.post_id;
 
@@ -181,6 +181,79 @@ router.post("/edit-post", async (req, res) => {
         }
 
         await updatePostContent(postID, newContent);
+        res.status(200).send({ message: 'SUCCESS' });
+    } catch (error) {
+        console.error('Error updating post...', error);
+        res.status(500).json({ message: 'Internal Server Error' });
+    }
+});
+//#endregion
+
+//#region Delete Post
+
+async function deletePost(sessionToken, browserInfo, postID) {
+    const client = await postgresPool.connect();
+    const query = `SELECT * FROM "forum"."delete_post"($1, $2, $3);`;
+    const queryResult = await client.query(query, [sessionToken, browserInfo, postID]);
+    client.release();
+
+    if (queryResult.rows.length <= 0) {
+        return null;
+    }
+
+    return queryResult.rows[0];
+}
+
+async function deleteAllComments(comments) {
+    let deleteRequests = [];
+    for (let i = 0; i < comments.length; ++i) {
+        const currentID = comments[i].comment_id;
+
+        deleteRequests.push(
+            CommentContentModel.deleteMany({
+                id: currentID
+            })
+        );
+    }
+
+    await Promise.all(deleteRequests);
+}
+
+async function getPostComments(postID) {
+    const client = await postgresPool.connect();
+    let query = `SELECT * FROM "forum"."get_post_comments"($1)`;
+    const queryResult = await client.query(query, [postID]);
+    
+    const result = queryResult.rows;
+    client.release();
+
+    return result;
+}
+
+router.post("/delete-post", async (req, res) => {
+    const sessionToken = req.body.session_token;
+    const browserInfo = req.body.browser_info;
+    const postID = req.body.post_id;
+
+    if ([sessionToken, browserInfo, postID].some(item => item == null)) {
+        res.status(400).send({ message: 'MISSING FIELDS' });
+        return;
+    }      
+
+    try {
+        const checkResult = await checkIfUserPost(sessionToken, browserInfo, postID);
+        if (!checkResult.is_user) {
+            // TODO: Return more information...
+            res.status(400).send({ message: 'INVALID USER' });
+            return;
+        }
+
+        const postComments = await getPostComments(postID);
+        await Promise.all([
+            deleteAllComments(postComments),
+            deletePost(sessionToken, browserInfo, postID)
+        ]);
+
         res.status(200).send({ message: 'SUCCESS' });
     } catch (error) {
         console.error('Error updating post...', error);
