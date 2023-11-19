@@ -135,4 +135,54 @@ router.post("/get-post-comments", async (req, res) => {
 
 //#endregion
 
+//#region Edit Comment
+
+async function updateCommentContent(commentID, newContent) {
+    await CommentContentModel.findOneAndUpdate(
+        { id: commentID }, 
+        { content: newContent }
+    );
+}
+
+async function checkIfUserComment(sessionToken, browserInfo, commentID) {
+    const client = await postgresPool.connect();
+    const query = `SELECT * FROM "forum"."is_user_comment"($1, $2, $3);`;
+    const queryResult = await client.query(query, [sessionToken, browserInfo, commentID]);
+    client.release();
+
+    if (queryResult.rows.length <= 0) {
+        return null;
+    }
+
+    return queryResult.rows[0];
+}
+
+router.post("/edit-comment", async (req, res) => {
+    const sessionToken = req.body.session_token;
+    const browserInfo = req.body.browser_info;
+    const commentID = req.body.comment_id;
+    const newContent = req.body.new_content;
+
+    if ([sessionToken, browserInfo, commentID, newContent].some(item => item == null)) {
+        res.status(400).send({ message: 'MISSING FIELDS' });
+        return;
+    }      
+
+    try {
+        const checkResult = await checkIfUserComment(sessionToken, browserInfo, commentID);
+        if (!checkResult.is_user) {
+            // TODO: Return more information...
+            res.status(400).send({ message: 'INVALID USER' });
+            return;
+        }
+
+        await updateCommentContent(commentID, newContent);
+        res.status(200).send({ message: 'SUCCESS' });
+    } catch (error) {
+        console.error('Error updating post...', error);
+        res.status(500).json({ message: 'Internal Server Error' });
+    }
+});
+//#endregion
+
 module.exports = router;
