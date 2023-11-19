@@ -15,6 +15,11 @@ const commentContentSchema = new mongoose.Schema({
     type: Number,
     required: false,
     default: null
+  },
+  is_deleted: {
+    type: Boolean,
+    required: false,
+    default: false
   }
 });
 

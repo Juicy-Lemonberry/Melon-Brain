@@ -52,6 +52,7 @@ router.post("/create-comment", async (req, res) => {
 
         await storeCommentContent(commentID, content, parentContentID);
         res.status(200).json({ commentID: commentID });
+
     } catch (error) {
         console.log("Error occured trying to fetch posts in category.\n", error)
         res.status(500).json({ message: 'Internal Server Error' });
@@ -139,8 +140,12 @@ router.post("/get-post-comments", async (req, res) => {
 
 async function updateCommentContent(commentID, newContent) {
     await CommentContentModel.findOneAndUpdate(
-        { id: commentID }, 
-        { content: newContent }
+        { id: commentID },
+        {
+            $set: {
+                content: newContent
+            }
+        }
     );
 }
 
@@ -177,6 +182,142 @@ router.post("/edit-comment", async (req, res) => {
         }
 
         await updateCommentContent(commentID, newContent);
+        res.status(200).send({ message: 'SUCCESS' });
+    } catch (error) {
+        console.error('Error updating post...', error);
+        res.status(500).json({ message: 'Internal Server Error' });
+    }
+});
+//#endregion
+
+//#region Delete Comment
+
+async function flagCommentDeleted(commentID) {
+    await CommentContentModel.findOneAndUpdate(
+        { id: commentID },
+        {
+            $set: {
+                content: `This comment has been deleted...`,
+                is_deleted: true
+            }
+        }
+    );
+}
+
+async function removeCommentUser(sessionToken, browserInfo, commentID) {
+    const client = await postgresPool.connect();
+    const query = `SELECT * FROM "forum"."remove_comment_user"($1, $2, $3);`;
+    const queryResult = await client.query(query, [sessionToken, browserInfo, commentID]);
+    client.release();
+
+    if (queryResult.rows.length <= 0) {
+        return null;
+    }
+
+    return queryResult.rows[0];
+}
+
+async function hasChildComments(commentID) {
+    const comments = await CommentContentModel.find({ parent_comment_id: commentID });
+    return comments.length >= 1;
+}
+
+async function removeComment(commentID) {
+    await CommentContentModel.deleteOne({
+        id: commentID
+    });
+}
+
+async function deleteComment(sessionToken, browserInfo, commentID) {
+    const client = await postgresPool.connect();
+    const query = `SELECT * FROM "forum"."delete_comment"($1, $2, $3);`;
+    const queryResult = await client.query(query, [sessionToken, browserInfo, commentID]);
+    client.release();
+
+    if (queryResult.rows.length <= 0) {
+        return null;
+    }
+
+    return queryResult.rows[0];
+}
+
+async function purgeComment(commentID) {
+    const client = await postgresPool.connect();
+    const query = `SELECT * FROM "forum"."purge_comment"($1);`;
+    const queryResult = await client.query(query, [commentID]);
+    client.release();
+
+    if (queryResult.rows.length <= 0) {
+        return null;
+    }
+
+    return queryResult.rows[0];
+}
+
+// NOTE: Delete all parents that have no child nodes left,
+// and was flagged for deletion...
+async function doHouseKeeping() {
+    const deletedComments = await CommentContentModel.find({
+        is_deleted: true
+    });
+
+    let deletedSomething = false;
+    for (let i = 0; i < deletedComments.length; ++i) {
+        const currentComment = deletedComments[i];
+        const childComments = await CommentContentModel.find({
+            parent_comment_id: currentComment.id
+        });
+
+        if (childComments.length <= 0){
+            await Promise.all([
+                CommentContentModel.deleteMany({
+                    id: currentComment.id
+                }),
+                purgeComment(currentComment.id)
+            ])
+            deletedSomething = true;
+        }
+    }
+
+    // Housekeep until nothing is deleted...
+    if (deletedSomething) {
+        await doHouseKeeping();
+    }
+}
+
+router.post("/delete-comment", async (req, res) => {
+    const sessionToken = req.body.session_token;
+    const browserInfo = req.body.browser_info;
+    const commentID = req.body.comment_id;
+
+    if ([sessionToken, browserInfo, commentID].some(item => item == null)) {
+        res.status(400).send({ message: 'MISSING FIELDS' });
+        return;
+    }      
+
+    try {
+        const checkResult = await checkIfUserComment(sessionToken, browserInfo, commentID);
+        if (!checkResult.is_user) {
+            res.status(400).send({ message: 'INVALID USER' });
+            return;
+        }
+
+        const containChildComments = await hasChildComments(commentID);
+        if (containChildComments) {
+            await Promise.all([
+                flagCommentDeleted(commentID),
+                removeCommentUser(sessionToken, browserInfo, commentID)
+            ]);
+            res.status(200).send({ message: 'SUCCESS' });
+            return;
+        }
+        
+        await Promise.all([
+            removeComment(commentID),
+            deleteComment(sessionToken, browserInfo, commentID)
+        ]);
+
+        await doHouseKeeping();
         res.status(200).send({ message: 'SUCCESS' });
     } catch (error) {
         console.error('Error updating post...', error);
