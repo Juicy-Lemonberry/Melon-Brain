@@ -1,5 +1,4 @@
 const express = require('express');
-const mongoose = require('mongoose');
 const router = express.Router();
 
 const ExampleModel = require('../mongo_models/exampleModel');
@@ -15,11 +14,6 @@ const postgresPool = new Pool({
     password: process.env.POSTGRES_PASSWORD,
     port: 5432, 
 });
-
-const mongoConfig = {
-    url: `mongodb://127.0.0.1:27017/${process.env.MONGODB_DB}`,
-    dbName: `${process.env.MONGODB_DB}`
-};
 
 router.get('/postgres', async (req, res) => {
     try {
@@ -65,13 +59,6 @@ router.post('/postgres', async (req, res) => {
 // you can seperate into different API routes for get/post...
 router.get('/mongodb/get', async (req, res) => {
     try {
-        console.log(mongoConfig.url);
-        // Connect to MongoDB using Mongoose
-        await mongoose.connect(mongoConfig.url, {
-            useNewUrlParser: true,
-            useUnifiedTopology: true,
-        });
-
         // Query the "example" collection using the Mongoose model
         const documents = await ExampleModel.find({});
 
@@ -80,20 +67,11 @@ router.get('/mongodb/get', async (req, res) => {
     } catch (error) {
         console.error('Error: ', error);
         res.status(500).send('Internal Server Error');
-    } finally {
-        // Close the Mongoose connection
-        mongoose.connection.close();
     }
 });
 
 router.post('/mongodb/post', async (req, res) => {
     try {
-        // Connect to MongoDB using Mongoose
-        await mongoose.connect(mongoConfig.url, {
-            useNewUrlParser: true,
-            useUnifiedTopology: true,
-        });
-
         // Create a new document using the example model
         const newDocument = new ExampleModel({
             sampleContent: req.body.sampleContent,
@@ -106,9 +84,6 @@ router.post('/mongodb/post', async (req, res) => {
     } catch (error) {
         console.error('Error: ', error);
         res.status(500).send('Internal Server Error');
-    } finally {
-        // Close the Mongoose connection
-        mongoose.connection.close();
     }
 });
   

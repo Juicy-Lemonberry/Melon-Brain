@@ -1,62 +1,190 @@
 'use client'
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import TopNavbar from '@/components/TopNavbar';
 import { useSearchParams } from 'next/navigation';
-import { Container, Row, Col, Card, ListGroup, Badge, Form, Button } from 'react-bootstrap';
+import { Button, Form, Row, Col, Container, ListGroup } from 'react-bootstrap';
 import CommentItem from '@/components/forum/post/CommentItem';
+import PostContent from '@/components/forum/post/PostContent';
+import UAParser from 'ua-parser-js';
+import { getSessionToken } from '@/utils/accountSessionCookie';
+import config from '@/config';
+import CommentForm from '@/components/forum/post/CommentForm';
+import VoteMenu from '@/components/forum/post/VoteMenu';
+import EditContentForm from '@/components/forum/EditContentForm';
+import DeleteContentButton from '@/components/forum/DeleteContentButton';
 
-const PostPage = () => {
-    const [newComment, setNewComment] = useState('');
+interface Comment {
+    commentID: string;
+    username: string | null;
+    displayName: string;
+    createdDate: string;
+    content: string;
+    children: Comment[];
+}
 
-    // TODO: Fetch actual post data from backend...
-    const searchParams = useSearchParams();
-    const postID = searchParams.get('p');
-
-    // NOTE: Sample data...
-    const postData = {
-    title: "Understanding React Hooks",
-    content: "Hooks are a new addition in React 16.8 that lets you use state and other React features without writing a class...",
-    author: "Jane Doe",
-    datePosted: "2023-11-07",
-    comments: [
-        {
-        id: 1,
-        author: "John Smith",
-        content: "Great article! Thanks for the info.",
-        datePosted: "2023-11-08",
-        votes: 10,
-        replies: [
-            {
-            id: 3,
-            author: "Jane Doe",
-            content: "Glad you liked it!",
-            datePosted: "2023-11-09",
-            votes: 5,
-            },
-            {
-            id: 4,
-            author: "Mark Green",
-            content: "This clarified a lot, thanks!",
-            datePosted: "2023-11-09",
-            votes: 3,
-            },
-        ],
-        },
-        {
-        id: 2,
-        author: "Alice Brown",
-        content: "I've been having a hard time with hooks, but this makes more sense now.",
-        datePosted: "2023-11-08",
-        votes: 8,
-        },
-    ],
+async function getPostComments(postID: string): Promise<Comment[]> {
+    const jsonData = {
+        "post_id": postID
     };
 
-    const handleCommentSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        // TODO: Handle send to backend new comment
-        console.log(newComment);
-        setNewComment('');
+    const options = {
+        method: 'POST',
+        headers: {
+        'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(jsonData)
+    };
+
+    const endpointUrl = `${config.API_BASE_URL}/api/forum-comment/get-post-comments`;
+    const response = await fetch(endpointUrl, options);
+    const data = await response.json();
+
+    if (!response.ok) {
+        return [];
+    }
+
+    return data.comments as Comment[];
+}
+
+interface LoginInfo {
+    loginID: string | null;
+    loginUsername: string | null;
+}
+
+async function checkUserAuthentication(): Promise<LoginInfo> {
+    const parser = new UAParser();
+    const browserName = parser.getBrowser().name;
+    const sessionToken = getSessionToken();
+
+    const jsonData = {
+        "browser_name": browserName,
+        "session_token": sessionToken
+    };
+
+    const options = {
+        method: 'POST',
+        headers: {
+        'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(jsonData)
+    };
+
+    const endpointUrl = `${config.API_BASE_URL}/api/users/authenticate`;
+    const response = await fetch(endpointUrl, options);
+    const data = await response.json();
+
+    if (response.ok && data["message"] === "OK") {
+        return {
+            loginID: data["account_id"],
+            loginUsername: data["username"]
+        }
+    }
+
+    return {
+        loginID: null,
+        loginUsername: null
+    };
+}
+
+interface PostInformation {
+    postID: string;
+    categoryID: number | null;
+    username: string | null;
+    displayName: string | null;
+    tags: string[];
+    postDate: string;
+    title: string;
+    content: string;
+}
+
+async function fetchPostInformation(postID: string): Promise<PostInformation | null> {
+    try {
+        const jsonData = { "post_id": postID };
+        const options = {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(jsonData)
+        };
+
+        const response = await fetch(`${config.API_BASE_URL}/api/forum-post/get-post`, options);
+
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error('Failed to fetch post information:', error);
+        return null;
+    }
+}
+
+async function submitEditedPost(postID: string, newContent: string): Promise<boolean> {
+    const parser = new UAParser();
+    const browserInfo = parser.getBrowser().name;
+    const sessionToken = getSessionToken();
+
+    const jsonData = {
+        "session_token": sessionToken,
+        "browser_info": browserInfo,
+        "post_id": postID,
+        "new_content": newContent
+    };
+
+    const options = {
+        method: 'POST',
+        headers: {
+        'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(jsonData)
+    };
+
+    const response = await fetch(
+        `${config.API_BASE_URL}/api/forum-post/edit-post`,
+        options
+    );
+
+    return response.status === 200;
+}
+
+const PostPage = () => {
+    const [loginInfo, setLoginInfo] = useState<LoginInfo>({
+        loginID: null,
+        loginUsername: null
+    });
+    const [comments, setComments] = useState<Comment[]>([]);
+    const [postInformation, setPostInformation] = useState<PostInformation | null>(null);
+    const [isLoadingInformation, setIsLoadingInformation] = useState(true);
+    const [isEditing, setIsEditing] = useState(false);
+
+    const searchParams = useSearchParams();
+    // TODO: Invalidate more elegantly
+    let postID = searchParams.get('p') ?? '-1';
+
+    const isLoggedInUserPost = (postInformation?.username === loginInfo.loginUsername);
+
+    useEffect(() => {
+        checkUserAuthentication().then((result) => setLoginInfo(result));
+        getPostComments(postID).then((result) => setComments(result));
+        fetchPostInformation(postID).then((result) => {
+            setPostInformation(result);
+            setIsLoadingInformation(false);
+        })
+    }, []);
+
+    const handleEditClick = () => {
+        setIsEditing(true);
+    };
+
+    const handleCancelEdit = () => {
+        setIsEditing(false);
+    };
+
+    const handleEditSubmit = (newContent: string) => {
+        submitEditedPost(postID, newContent).then((result) => {
+            // TODO: Handle error message on failure...
+            window.location.reload();
+        });
     };
 
     return (
@@ -65,45 +193,49 @@ const PostPage = () => {
             <Container className="my-4">
                 <Row className="justify-content-center">
                     <Col md={8}>
-                        <Card className="mb-3">
-                            <Card.Header as="h3">{postData.title}</Card.Header>
-                            <Card.Body>
-                                <Card.Subtitle className="mb-2 text-muted">
-                                    <span>By {postData.author}</span> <Badge bg="secondary">{postData.datePosted}</Badge>
-                                </Card.Subtitle>
-                                <Card.Text>{postData.content}</Card.Text>
-                            </Card.Body>
-                        </Card>
+                        
+                        {
+                            isEditing ? (
+                                <EditContentForm originalContent={postInformation == null ? '' : postInformation?.content} onEditSubmit={handleEditSubmit} onEditCancel={handleCancelEdit}/>
+                            ) : (
+                                <>
+                                    <PostContent postInformation={postInformation} isLoading={isLoadingInformation}/>
+                                    {isLoggedInUserPost && 
+                                        <>
+                                            <Button onClick={handleEditClick}>Edit</Button>
+                                            <DeleteContentButton contentID={postID} contentType='POST' />
+                                        </>
+                                    }
+                                    { /* Reply to post form */}
+                                </>
+                            )
+                        }
 
-                        { /* Reply to post form */}
-                        <Form onSubmit={handleCommentSubmit}>
-                            <Form.Group className="mb-3" controlId="newComment">
-                            <Form.Label>Reply to this post</Form.Label>
-                            <Form.Control
-                                as="textarea"
-                                rows={3}
-                                value={newComment}
-                                onChange={e => setNewComment(e.target.value)}
-                                placeholder="Write your comment here..."
-                            />
-                            </Form.Group>
-                            <Button variant="primary" type="submit">
-                            Post Comment
-                            </Button>
-                        </Form>
+                        <hr></hr>
+                        <VoteMenu contentType='POST' contentID={postID} accountID={loginInfo.loginID} isAccountContent={isLoggedInUserPost}/>
+                        
+                        <hr></hr>
+                        {
+                            loginInfo.loginID
+                            &&
+                            <CommentForm postID={postID} parentID={null}/>
+                        }
 
                         <hr></hr>
                         <h3>Comments:</h3>
                         <ListGroup>
-                            {postData.comments.map(comment => (
+                            {comments.map(comment => (
                                 <CommentItem
-                                key={comment.id}
-                                id={comment.id}
-                                author={comment.author}
-                                content={comment.content}
-                                datePosted={comment.datePosted}
-                                votes={comment.votes}
-                                replies={comment.replies}
+                                    key={comment.commentID}
+                                    id={comment.commentID}
+                                    username={comment.username}
+                                    displayName={comment.displayName}
+                                    content={comment.content}
+                                    datePosted={comment.createdDate}
+                                    replies={comment.children}
+                                    loginID={loginInfo.loginID}
+                                    loginUsername={loginInfo.loginUsername}
+                                    postID={postID}
                                 />
                             ))}
                         </ListGroup>

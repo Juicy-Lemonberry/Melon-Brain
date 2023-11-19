@@ -1,0 +1,46 @@
+.post-item {
+    // Add padding or margins as necessary
+    padding: 1rem;
+    border-bottom: 1px solid #ccc; // Example border for separation, adjust as needed
+  
+    .post-title {
+      margin-bottom: 0.5rem; // Spacing between the title and the post info
+      color: #333; // Dark color for the title text
+    }
+  
+    .post-info {
+      font-size: 0.9rem; // Smaller text for the post info
+      color: #666; // Lighter color for the info text
+      margin-bottom: 1rem; // Spacing between the info and the content/tags
+  
+      // Style for the author name and posted date
+      span {
+        font-weight: bold; // Make author name bold
+      }
+    }
+  
+    .post-tags {
+      margin-bottom: 1rem; // Space between tags and content preview
+  
+      .tag-badge-link {
+        // Styling for tag badges as links
+        display: inline-block; // Align badges inline
+        margin-right: 0.25rem; // Spacing between tags
+        text-decoration: none; // Remove underline from links
+  
+        .badge {
+          // Style for the badges themselves
+          font-size: 0.8rem; // Smaller font size for the badges
+        }
+      }
+    }
+  
+    .post-preview {
+      font-size: 0.95rem; // Slightly smaller font size for content preview
+      color: #555; // Medium color for preview text
+      overflow: hidden; // Hide overflow
+      text-overflow: ellipsis; // Add ellipsis if content overflows
+      white-space: nowrap; // No wrapping to a new line for the preview
+    }
+  }
+  
