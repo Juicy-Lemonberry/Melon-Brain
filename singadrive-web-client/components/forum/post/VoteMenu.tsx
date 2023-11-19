@@ -1,4 +1,5 @@
 'use client'
+import QuoteText from '@/components/QuoteText';
 import config from '@/config';
 import React, { useState, FC, useEffect } from 'react';
 import { Button } from 'react-bootstrap';
@@ -161,7 +162,7 @@ const VoteMenu: FC<VoteMenuProps> = ({ contentType, contentID, accountID, isAcco
     if (isAccountContent) {
         return (
             <div>
-                <p>You cannot vote on your own content...</p>
+                <QuoteText text='You cannot vote on your own content...'></QuoteText>
                 <span className="ml-2 mr-2">Votes: {voteCount}</span>
             </div>
         );

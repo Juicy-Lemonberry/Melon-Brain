@@ -212,15 +212,15 @@ const PostPage = () => {
                         }
 
                         <hr></hr>
+                        <VoteMenu contentType='POST' contentID={postID} accountID={loginInfo.loginID} isAccountContent={isLoggedInUserPost}/>
+                        
+                        <hr></hr>
                         {
                             loginInfo.loginID
                             &&
                             <CommentForm postID={postID} parentID={null}/>
                         }
 
-                        <hr></hr>
-                        <VoteMenu contentType='POST' contentID={postID} accountID={loginInfo.loginID} isAccountContent={isLoggedInUserPost}/>
-                        
                         <hr></hr>
                         <h3>Comments:</h3>
                         <ListGroup>
