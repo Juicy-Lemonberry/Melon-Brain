@@ -86,6 +86,7 @@ const TopNavbar: React.FC = () => {
           <Nav.Link href="/">Home</Nav.Link>
           <Nav.Link href="/about">About</Nav.Link>
           <Nav.Link href="/forum">Forum</Nav.Link>
+          <Nav.Link href="/rent-map">Rent Map</Nav.Link>
         </Nav>
         <Nav className="ms-auto me-5">
           {user ? (
