@@ -8,7 +8,7 @@ const CommentContentModel = require('../../mongo_models/forum/commentContentMode
 
 async function createCommentPostgreSQL(postID, sessionToken, browserInfo) {
     const client = await postgresPool.connect();
-    let query = `SELECT * FROM "forum"."create_new_comment"($1, $2, $3)`;
+    let query = `SELECT * FROM "forum"."create_new_comment"($1, $2, $3);`;
     const queryResult = await client.query(query, [postID, sessionToken, browserInfo]);
     
     const result = queryResult.rows[0];
