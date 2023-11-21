@@ -15,7 +15,8 @@ const carIcons = {
   green: createCarIcon('/assets/car-green.png'),
   yellow: createCarIcon('/assets/car-yellow.png'),
   orange: createCarIcon('/assets/car-orange.png'),
-  red: createCarIcon('/assets/car-red.png')
+  red: createCarIcon('/assets/car-red.png'),
+  booked: createCarIcon('/assets/car-booked.png')
 };
 
 export default carIcons;
