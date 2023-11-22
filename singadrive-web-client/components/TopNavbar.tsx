@@ -83,8 +83,6 @@ const TopNavbar: React.FC = () => {
       <Navbar.Toggle aria-controls="basic-navbar-nav" />
       <Navbar.Collapse id="basic-navbar-nav">
         <Nav className="mr-auto">
-          <Nav.Link href="/">Home</Nav.Link>
-          <Nav.Link href="/about">About</Nav.Link>
           <Nav.Link href="/forum">Forum</Nav.Link>
           <Nav.Link href="/rent-map">Rent Map</Nav.Link>
         </Nav>
@@ -98,7 +96,6 @@ const TopNavbar: React.FC = () => {
               </div>
             } id="nav-dropdown" className="custom-nav-dropdown">
               <NavDropdown.Item href={`/profile?username=${user['username']}`}>View Profile</NavDropdown.Item>
-              <NavDropdown.Item href="/rentals">View Rentals</NavDropdown.Item>
               <NavDropdown.Divider />
               <NavDropdown.Item href="/profile/edit">Edit Profile</NavDropdown.Item>
               <NavDropdown.Divider />

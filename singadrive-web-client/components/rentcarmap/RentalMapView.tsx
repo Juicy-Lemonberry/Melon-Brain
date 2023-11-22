@@ -57,9 +57,7 @@ async function getLoggedInUsername(): Promise<string | null> {
   if (!response.ok) {
     return null;
   }
-
   const data = await response.json();
-  console.log(data);
   return data["username"];
 }
 
@@ -87,6 +85,12 @@ async function getRentedVehicle(username: string): Promise<Car | null> {
   if (data == null){
     return data;
   }
+
+  data["modelID"] = data["model_id"]; 
+  data["modelName"] = data["model_name"]; 
+  data["manufacturerID"] = data["manufacturer_id"]; 
+  data["manufacturerName"] = data["manufacturer_name"]; 
+  data["fuelType"] = data["fuel_type"]; 
   return data as Car;
 }
 
