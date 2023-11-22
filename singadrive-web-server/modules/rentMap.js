@@ -2,7 +2,8 @@ const express = require('express');
 const router = express.Router();
 
 const postgresPool = require("../configs/postgresPool");
-const VehicleStatusModel = require('../mongo_models/automobile/vehicleStatus')
+const VehicleStatusModel = require('../mongo_models/automobile/vehicleStatus');
+
 //#region Get rentable Vehicles
 async function getRentableVehicles() {
     const client = await postgresPool.connect();
@@ -84,7 +85,6 @@ router.post('/get-rented-vehicle', async (req, res) => {
     try {
         const rentedVehicle = await getUserRentedVehicle(username);
         if (rentedVehicle == null) {
-            console.log("No Rental...");
             res.status(200).json(null);
             return;
         }
@@ -94,8 +94,6 @@ router.post('/get-rented-vehicle', async (req, res) => {
         rentedVehicle["lng"] = vehicleStatus.lng;
         rentedVehicle["regPlate"] = rentedVehicle.registration_plate;
         rentedVehicle["fuelLevel"] = vehicleStatus.fuelLevel;
-
-        console.log(rentedVehicle);
 
         res.status(200).json(rentedVehicle);
     } catch (error) {
@@ -125,8 +123,6 @@ router.post('/rent-vehicle', async (req, res) => {
     const registrationPlate = req.body.registration_plate;
     const browserInfo = req.body.browser_name;
 
-    console.log([sessionToken, browserInfo, registrationPlate])
-    console.log("Rent")
     if ([sessionToken, browserInfo, registrationPlate].some(item => item == null)) {
         res.status(400).json({ message: 'MISSING FIELDS' });
         return;
@@ -134,8 +130,9 @@ router.post('/rent-vehicle', async (req, res) => {
 
     try {
         const resultMessage = await rentVehicleRequest(sessionToken, browserInfo, registrationPlate);
-        console.log(resultMessage)
         res.status(200).json({ message: resultMessage });
+
+
     } catch (error) {
         console.log("Error occured trying to rent a vehicle\n", error)
         res.status(500).json({ message: 'Internal Server Error' });
@@ -163,9 +160,6 @@ router.post('/end-vehicle-rental', async (req, res) => {
     const registrationPlate = req.body.registration_plate;
     const browserInfo = req.body.browser_name;
 
-    console.log([sessionToken, browserInfo, registrationPlate])
-    console.log("end")
-
     if ([sessionToken, browserInfo, registrationPlate].some(item => item == null)) {
         res.status(400).json({ message: 'MISSING FIELDS' });
         return;
@@ -173,7 +167,6 @@ router.post('/end-vehicle-rental', async (req, res) => {
 
     try {
         const resultMessage = await endRentalRequest(sessionToken, browserInfo, registrationPlate);
-        console.log(resultMessage);
         res.status(200).json({ message: resultMessage });
     } catch (error) {
         console.log("Error occured trying to rent a vehicle\n", error)
@@ -181,6 +174,125 @@ router.post('/end-vehicle-rental', async (req, res) => {
     }
 });
 
+//#endregion
+
+//#region Get manufacturer details
+
+router.post('/get-manufacturer-detail', async (req, res) => {
+    const manufacturerID = req.body.manufacturer_id;
+
+    if (manufacturerID == null) {
+        res.status(400).json({ message: 'MISSING BODY FIELDS' });
+        return;
+    }
+
+    try {
+        const client = await postgresPool.connect();
+        let query = `SELECT * FROM "automobile"."manufacturer" WHERE id = $1;`;
+        const queryResult = await client.query(query, [manufacturerID]);
+        client.release();
+
+        if (queryResult.rows.length <= 0){
+            res.status(200).json(null);
+            return;
+        }
+
+        res.status(200).json(queryResult.rows[0]);
+    } catch (error) {
+        console.error('Failed to fetch manufacturer information:', error);
+        res.status(500).send("INTERNAL SERVER ERROR");
+    } 
+});
+//#endregion
+
+//#region Get Manufacturer Vehicles
+
+router.post('/get-manufacturer-vehicles', async (req, res) => {
+    const manufacturerID = req.body.manufacturer_id;
+    
+    if (manufacturerID == null) {
+        res.status(400).json({ message: 'MISSING BODY FIELDS' });
+        return;
+    }
+
+    try {
+        const client = await postgresPool.connect();
+        let query = `SELECT * FROM "automobile"."get_vehicles_by_manufacturer"($1);`;
+        const queryResult = await client.query(query, [manufacturerID]);
+        client.release();
+
+        if (queryResult.rows.length <= 0){
+            res.status(200).json([]);
+            return;
+        }
+
+        res.status(200).json(queryResult.rows);
+    } catch (error) {
+        console.error('Failed to fetch manufacturer vehicles: ', error);
+        res.status(500).send("INTERNAL SERVER ERROR");
+    } 
+});
+
+//#endregion
+
+
+//#region Get Model Vehicles
+
+router.post('/get-model-vehicles', async (req, res) => {
+    const modelID = req.body.model_id;
+    
+    if (modelID == null) {
+        res.status(400).json({ message: 'MISSING BODY FIELDS' });
+        return;
+    }
+
+    try {
+        const client = await postgresPool.connect();
+        let query = `SELECT * FROM "automobile"."get_vehicles_by_model"($1);`;
+        const queryResult = await client.query(query, [modelID]);
+        client.release();
+
+        if (queryResult.rows.length <= 0){
+            res.status(200).json([]);
+            return;
+        }
+
+        res.status(200).json(queryResult.rows);
+    } catch (error) {
+        console.error('Failed to fetch model vehicles: ', error);
+        res.status(500).send("INTERNAL SERVER ERROR");
+    } 
+});
+
+//#endregion
+
+//#region Get model details
+
+router.post('/get-model-detail', async (req, res) => {
+    const modelID = req.body.model_id;
+
+    if (modelID == null) {
+        res.status(400).json({ message: 'MISSING BODY FIELDS' });
+        return;
+    }
+
+    try {
+        const client = await postgresPool.connect();
+        let query = `SELECT * FROM "automobile"."model" WHERE id = $1;`;
+        const queryResult = await client.query(query, [modelID]);
+        client.release();
+
+        if (queryResult.rows.length <= 0){
+            res.status(200).json(null);
+            return;
+        }
+
+        res.status(200).json(queryResult.rows[0]);
+    } catch (error) {
+        console.error('Failed to fetch model information:', error);
+        res.status(500).send("INTERNAL SERVER ERROR");
+    } 
+});
 //#endregion
 
 module.exports = router;
