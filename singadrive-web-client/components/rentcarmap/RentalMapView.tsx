@@ -176,6 +176,7 @@ const RentalMapView: React.FC = () => {
  
   const [selectedCar, setSelectedCar] = useState<Car | null>(null);
   const [rentedCar, setRentedCar] = useState<Car | null>(null);
+  const [userLoggedIn, setUserLoggedIn] = useState<boolean>(false);
   const handleClick = (car: Car) => {
     setSelectedCar(car);
   };
@@ -228,6 +229,7 @@ const RentalMapView: React.FC = () => {
     
     getLoggedInUsername().then((username) => {
       if (username == null){
+        setUserLoggedIn(false);
         return;
       }
 
@@ -235,6 +237,7 @@ const RentalMapView: React.FC = () => {
         console.log(`Rented ${setRentedCar}`);
         setRentedCar(result);
       });
+      setUserLoggedIn(true);
     });
   }, []);
 
@@ -282,6 +285,7 @@ const RentalMapView: React.FC = () => {
         isRentingVehicle={rentedCar != null}
         onRequestEndRental={handleEndRental}
         onRequestStartRental={handleRentCar}
+        isLoggedIn={userLoggedIn}
          />}
       </div> 
     </>

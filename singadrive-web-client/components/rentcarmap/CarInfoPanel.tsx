@@ -26,10 +26,11 @@ interface CarInfoPanelProps {
   isRentedVehicle: boolean;
   onRequestStartRental: (registrationPlate: string) => Promise<boolean>;
   onRequestEndRental: (registrationPlate: string) => Promise<boolean>;
+  isLoggedIn: boolean;
 }
 
 const CarInfoPanel: React.FC<CarInfoPanelProps> = ({
-  carInfo, onClose, isRentingVehicle, isRentedVehicle, onRequestStartRental, onRequestEndRental
+  carInfo, onClose, isRentingVehicle, isRentedVehicle, onRequestStartRental, onRequestEndRental, isLoggedIn
 }) => {
   const [loading, setLoading] = useState(false);
 
@@ -62,7 +63,11 @@ const CarInfoPanel: React.FC<CarInfoPanelProps> = ({
       <hr />
       <QuoteText text={`${carInfo.category}, powered by ${carInfo.fuelType}`}></QuoteText>
       <hr />
-      {isRentedVehicle ? (
+      {
+        isLoggedIn && <p>Login to rent a vehicle...</p>
+      }
+
+      {(isRentedVehicle && isLoggedIn) ? (
         <Button disabled={loading} variant="danger" onClick={handleEndRental}>End Rental</Button>
       ) : isRentingVehicle ? (
         <p>You are currently renting a vehicle...</p>
