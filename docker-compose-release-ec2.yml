@@ -1,0 +1,21 @@
+services:
+  server:
+    build:
+      context: ./singadrive-web-server
+      dockerfile: ./DockerfileRelease  
+    volumes:
+      - ./singadrive-web-server:/app
+    environment:
+      POSTGRES_DB: singadrive_db
+      POSTGRES_USER: ${SINGADRIVE_POSTGRES_USERNAME}
+      POSTGRES_PASSWORD: ${SINGADRIVE_POSTGRES_PASSWORD}
+      MONGODB_DB: singadrive_db
+    network_mode: host
+
+  client:
+    build:
+      context: ./singadrive-web-client
+      dockerfile: ./DockerfileRelease 
+    volumes:
+      - ./singadrive-web-client:/app
+    network_mode: host
