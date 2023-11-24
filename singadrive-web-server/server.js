@@ -21,7 +21,6 @@ mongoose.connect(mongoConfig.url, {
     console.error('Error connecting to MongoDB', err);
 });
 
-const exampleRoutes = require('./modules/example');
 const rentMapRoutes = require('./modules/rentMap');
 
 const usersRoutes = require('./modules/user/users');
@@ -33,9 +32,6 @@ const forumPostRoutes = require('./modules/forum/post');
 const forumCommentRoutes = require('./modules/forum/comment');
 const forumVoteRoutes = require('./modules/forum/vote');
 const forumTagRoutes = require('./modules/forum/tag');
-
-// URL calls to '/api/example/...' will be passed to `modules/example.js'.
-app.use("/api/example", exampleRoutes);
 
 // NOTE: User related routes...
 app.use("/api/public-users", usersPublicDataRoutes);
