@@ -34,9 +34,20 @@ router.get('/profile', async (req, res) => {
     let accountData = await AccountsModel.findOne(
       { id: resultData.id }
     );
-    resultData.birthday = accountData.birthday;
-    resultData.description = accountData.description;
-    resultData.externalLinks = accountData.external_links;
+
+    if (accountData && accountData.birthday){
+      resultData.birthday = accountData.birthday;
+    } else {
+      resultData.birthday = "";
+    }
+
+    if (accountData) {
+      resultData.description = accountData.description;
+      resultData.externalLinks = accountData.external_links;
+    } else {
+      resultData.description = "";
+      resultData.externalLinks = [];
+    }
 
     res.status(404).json({ message: 'SUCCESS', data: resultData });
   } catch (error) {
